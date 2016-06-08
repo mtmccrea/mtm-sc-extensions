@@ -1,0 +1,136 @@
+TITLE:: GrainFader
+summary:: A pair of buffer granulators that can be crossfaded and independently monitored. Support for performing with a TouchOSC interface.
+categories:: Granular Synthesis
+related:: Classes/TouchOSC
+
+DESCRIPTION::
+GrainFader wraps up 2 instances of BufGrainJ and index into soundfile buffers using a Phasor of variable speed and direction (< 0 >). You supply a file path of a folder containing soundfiles and they are all loaded for swapping on the fly. The two instances of BufGrainJ are summed into a mono feed via a power-panning crossfade. The feeds can be monitored individually via two monitor busses, indepent of the main output bus. Each grain stream can also be sent to an auxilliary bus.
+
+Note that the granulation parameters are accessed and changed through the synth instance directly, not the GrainFader.  For example, the grain rate of granulator #1 would be changed by e.g. code::myGrainFader.synth1.grain_rate_(35)::. The class was really intended to be controlled through a TouchOSC interface, which takes care of all of this for you.
+
+CLASSMETHODS::
+
+METHOD:: new
+(describe method here)
+
+ARGUMENT:: outbus
+A bus number or a CTKAudio to which the mix of grain streams are sent.
+
+ARGUMENT:: monitorBus
+A bus number or a CTKAudio to which the monitor mix is sent.
+
+ARGUMENT:: auxBus
+A bus number or a CTKAudio to which the aux sends are sent.
+
+ARGUMENT:: bufFolderPath
+The full path (String) of the folder containing the soundfiles to be granulated.
+
+ARGUMENT:: server
+Optionally, an instance of a server to use.  Defaults to Server.default.
+
+
+INSTANCEMETHODS::
+
+METHOD:: monitor
+Enable/disable monitoring of one of the grain synths by index (0 or 1) with a boolean.
+
+METHOD:: free
+Free all the resources used by GrainFader, including synths, busses, buffers.
+
+METHOD:: swapBuf
+Swap one or both of the grain synth's granulation buffer according to the buffer index of strong::.buffers:: (these are loaded in order they are in the folder, usually alphabetical). You can also view the soundfile index order by name in with the strong::.sfNames:: getter.  Which synth(s) swaps its buffer depends on the synth's strong::.recv_buf:: argument state (0 or 1).
+
+METHOD:: balance
+Adjust the crossfade balance between the 2 grain synths, scaled to be a power fade.
+
+ARGUMENT:: balance
+Crossfade balance 0 > 1. 0 is all strong::.synth1::, 1 is all strong::.synth2::, 0.5 is equal power from both (amp = 0.707);
+
+METHOD:: connectTouchOSC
+Automagically connect all of the relevant synth parameters and global GrainFader controls to a TouchOSC interface.
+
+ARGUMENT:: aTouchOsc
+An instance of TouchOSC
+
+
+EXAMPLES::
+
+code::
+// create a bus to send your GrainFader for processing, reverb, etc
+~auxBus = CtkAudio.play(1)
+
+
+// send the GrainFader output to 0 -the first hardware out-
+// monitor on bus 2 (or whichever bus is routed to your headphones/monitor)
+x = GrainFader( outbus: 0, monitorBus: 2, auxBus: ~auxBus,
+	bufFolderPath: "/Users/admin/Documents/Recordings/test/"
+)
+
+// creat an instance of TouchOSC, make sure you've
+// loaded the grain_instr template, see helpfile as needed
+t = TouchOSC("169.254.50.164", 9000)
+
+// connect the TouchOSC to the GrainFader
+x.connectTouchOSC(t)
+
+// >> Note you should see the soundfile names show up at the top of your TouchOSC interface, in the labels of the multi-push widgets.
+
+// clear the controls, freeing the listening responders (including Spec mappings)
+t.clearControls
+// or - disconnect the interface from your synth/object, but retain the conrol mappings
+t.disconnectAll
+
+// cleanup everything
+x.free
+
+
+// ::::: For use without the TouchOSC app ::::::
+/*
+Note that the granulation parameters are accessed and changed through the synth instance directly, not the GrainFader.  For example, the grain rate of granulator #1 would be changed by e.g. myGFader.synth1.grain_rate_(35). The class was really intended to be controlled through a TouchOSC interface, which takes care of all of this for you.
+*/
+// Note that when the GrainFader starts, the synths are running,
+// but the gates are 0, open them up...
+x.synth1.gate_(1)
+x.synth2.gate_(1)
+
+// note also that GrainFader initializes to be balanced (fadded)
+// all the way on synth1, and none on synth2. see below regarding balance
+
+// To change the synths' behaviors
+// you'd change parameters on the instance of the 2 synths used by GrainFader, e.g.:
+
+x.synth1.grain_rate_(35)
+x.synth2.grn_dur_(0.7)
+
+// Have a look in the class to see the SynthDef, but the useful synth parameters are as follows:
+
+start=0, end=1,		// bounds of grain position in sound file
+grain_rand = 0,		// gaussian trigger: 0 = regular at grain_rate, 1 = random around grain_rate
+grain_rate = 10, 	// grain rate
+grain_dur = 0.04,	// grain duration
+pos_disp = 0.01,	// position dispersion of the pointer, in seconds
+pitch_rate=1, 		// pitch shift ratio
+auxmix=0, 			// mix amount to send to the aux bus
+amp=1,				// amplitude of output
+pos_rate_scale = 1,	// change the speed of the grain position pointer (can be negative)
+recv_buf = 0,		// flag to check if next selected buffer is to be input to this instance (see below)
+gate = 1,			// gate to start and release the synth
+
+
+// a useful parameter is the ability to xfade between the 2 synths
+// this is done with a GrainFader method .balance_()
+x.balance_(0)		// all synth 1
+x.balance_(2)		// all synth 2
+
+// youm can swap the buffers being granulated on the fly
+// first you need to set the .recv_buf parameter of the synth
+// to 1, then call .swapBuf_ on the grainfader
+
+x.synth2.swapBuf_(1) // synth 2 ready to receive new buffer
+x.swapBuf_(bufIndex) // give the index of the buffer to swap in
+
+// you can view the buffers in order of they're index by
+x.sfNames
+
+
+::
