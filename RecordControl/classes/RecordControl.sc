@@ -2,7 +2,7 @@ RecordControl {
 	// copyArgs
 	var <numChannels, <>headerFormat, <>sampleFormat, <>overwrite, <>appendKr, server;
 
-	var <busnum, <fileName, <directory;
+	var <busnum, <fileName, <directory, <>verbose=true;
 	var <buffer, <recPath, <recording=false;
 	var bufPrepared=false, dataRecorded=false, recCnt=0;
 	var wrSynth, baseFileName;
@@ -73,13 +73,18 @@ RecordControl {
 
 	stop {
 		fork{
+			var wasRecording;
+			wasRecording = recording;
+
 			wrSynth !? {wrSynth.free; wrSynth = nil};
 			server.sync;
 
 			buffer !? {
 				this.prCleanupBuffer;
 				recording = false;
+				this.changed(\recording, recording);
 			};
+			verbose.if {wasRecording.if {"Recording finished".postln} };
 		}
 	}
 
@@ -87,6 +92,7 @@ RecordControl {
 		numChannels = n;
 		this.prBuildSynthDef;
 		this.prCheckRecState;
+		this.changed(\numChannels, numChannels);
 	}
 
 	busnum_ { |busOrIndex|
@@ -96,8 +102,13 @@ RecordControl {
 		}
 		{busOrIndex.isKindOf(Bus)} {
 			busnum = busOrIndex.index
-		};
+		}
+		{busOrIndex.respondsTo('bus')} { //CtkBus, without dependency
+			busnum = busOrIndex.bus
+		}
+		{ Error("Unrecognized bus type").throw };
 		this.prCheckRecState;
+		this.changed(\busnum, busnum);
 	}
 
 	fileName_ { |string|
@@ -144,7 +155,8 @@ RecordControl {
 
 		dataRecorded = true;
 		recording = true;
-		postf("Recording % channels to %\n", numChannels, recPath);
+		this.changed(\recording, recording);
+		verbose.if {postf("Recording % channels to %\n", numChannels, recPath)};
 	}
 
 	prCleanupBuffer {
