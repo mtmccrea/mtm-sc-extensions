@@ -8,6 +8,8 @@ RecordControlView {
 
 	var fnTxt, dirTxt, dirBut, openDirBut, owrChk, owrTxt;
 	var posBusTxt, busTxt, numChNb, recBut, statusTxt;
+	var overlayChk, plotBut, <plotter, prevPlotBounds, plotting=false;
+	var bndLoNb, bndHiNb, autoChk;
 	var statusUpdateRoutine, color;
 	var <win;
 
@@ -32,6 +34,11 @@ RecordControlView {
 		owrTxt = StaticText().string_("Overwrite");
 		busTxt = TextField().string_(recorder.busnum);
 		numChNb = NumberBox().value_(recorder.numChannels);
+		plotBut = Button().states_([["Plot Signal"]]);
+		overlayChk = CheckBox();
+		bndLoNb = NumberBox().value_(0);
+		bndHiNb = NumberBox().value_(1);
+		autoChk = CheckBox().value_(1);
 		recBut = Button().states_([["Record", Color.black, Color.red.alpha_(0.5)],["Stop", Color.black, Color.yellow.alpha_(0.5) ]]);
 		statusTxt = StaticText().string_("Select a recording directory.").align_(\left);
 
@@ -81,6 +88,9 @@ RecordControlView {
 
 			owrChk, { |chk|
 				recorder.overwrite = chk.value.asBoolean;
+				chk.value.asBoolean.if{
+					this.updateStatus(format("Warning: you'll be overwriting %", recorder.fileName), 6);
+				}
 			},
 
 			busTxt, { |txt|
@@ -105,8 +115,8 @@ RecordControlView {
 				if (but.value.asBoolean) {
 					// if (fnTxt.string != "fileName") {
 					// fnTxt.doAction; // in case it wasn't submitted
-						// recorder.fileName_(fnTxt.string); // in case it wasn't submitted
-				// };
+					// recorder.fileName_(fnTxt.string); // in case it wasn't submitted
+					// };
 					recorder.record;
 					// un-click the button in case recordin fails
 					fork({
@@ -116,6 +126,31 @@ RecordControlView {
 				} {
 					recorder.stop;
 				}
+			},
+
+			plotBut, { |but|
+				recorder.plot
+			},
+
+			overlayChk, { |chk|
+				recorder.overlayPlot_(chk.value.asBoolean)
+			},
+
+			autoChk, { |chk|
+				if (chk.value.asBoolean) {
+					recorder.setPlotterBounds(\auto)
+				} {
+					recorder.setPlotterBounds(bndLoNb.value, bndHiNb.value);
+				}
+			},
+
+			bndLoNb, { |nb|
+				recorder.setPlotterBounds(nb.value, bndHiNb.value);
+				autoChk.value_(0);
+			},
+			bndHiNb, { |nb|
+				recorder.setPlotterBounds(bndLoNb.value, nb.value);
+				autoChk.value_(0);
 			},
 
 		].clump(2).do {
@@ -150,21 +185,42 @@ RecordControlView {
 								StaticText().string_("Control Bus Recorder").align_(\center),
 								HLayout(
 									VLayout(
+										HLayout(
+											plotBut,
+											nil,
+											StaticText().string_("overlay").align_(\right),
+											overlayChk,
+										),
+										10,
+										StaticText().string_("Plot Bounds").align_(\center),
+										HLayout(
+											autoChk,
+											StaticText().string_("auto").align_(\left),
+											5,
+											StaticText().string_("lo").align_(\left),
+											bndLoNb.minWidth_(40).align_(\center),
+											StaticText().string_("hi").align_(\left),
+											bndHiNb.minWidth_(40).align_(\center),
+										),
+									),
+									nil,
+									20,
+									VLayout(
 										StaticText().string_("bus").align_(\center),
-										[busTxt.maxWidth_(65).align_(\center), a: \center],
+										StaticText().string_("num\nChannels").align_(\center),
 									),
 									VLayout(
-										StaticText().string_("numChannels").align_(\center),
+										[busTxt.maxWidth_(65).align_(\center), a: \center],
 										[numChNb.align_(\center).minWidth_(45), a: \center],
 									)
 								)
 							)
 						)
 					),
-					[statusTxt.minWidth_(300).minHeight_(50).background_(color.alpha_(0.3)).align_(\center), a: \center]
+					[statusTxt.minWidth_(320).minHeight_(50).background_(color.alpha_(0.3)).align_(\center), a: \center]
 				),
 
-				20,
+				30,
 				// Right half
 				VLayout(
 					[recBut, a: \top],
@@ -218,18 +274,24 @@ RecordControlView {
 			switch( what,
 				\busnum, {
 					this.updateStatus(format("Bus updated: %", args[0]), 4);
+					plotting.if{ plotBut.doAction }
 				},
 				\numchannels, {
 					this.updateStatus(format("Number of bus channels updated: %", args[0]), 4);
+					plotting.if{ plotBut.doAction }
 				},
 				\filename, {
-					fnTxt.string = args[0];
-					fnTxt.stringColor_(Color.black);
+					{
+						fnTxt.string = args[0];
+						fnTxt.stringColor_(Color.black);
+					}.defer;
 					this.updateStatus(format("Filename updated: %", args[0]), 4);
 				},
 				\dirname, {
-					dirTxt.string = args[0];
-					dirTxt.stringColor_(Color.black);
+					{
+						dirTxt.string = args[0];
+						dirTxt.stringColor_(Color.black);
+					}.defer;
 					this.updateStatus(format("Recording directory updated: %", args[0]), 4);
 				},
 				\recording, {

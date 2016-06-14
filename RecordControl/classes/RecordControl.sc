@@ -6,6 +6,7 @@ RecordControl {
 	var <buffer, <recPath, <recording=false;
 	var bufPrepared=false, dataRecorded=false, recCnt=0;
 	var wrSynth, baseFileName, <gui;
+	var <plotter, <plotting = false, prevPlotWinBounds, prevPlotBounds, overlayPlot=false;
 
 	*new { |busOrIndex, numChannels=1, fileName, directory, headerFormat = "WAV", sampleFormat = "int32", overwrite=false, appendKr=true, server, makeGui=false|
 		^super.newCopyArgs(
@@ -55,7 +56,14 @@ RecordControl {
 	}
 
 	makeGui {
-		gui = RecordControlView(this)
+		if (gui.isNil) {
+			gui = RecordControlView(this);
+		} {
+			gui.win.isClosed.if{
+				gui = RecordControlView(this);
+			};
+			gui.win.front
+		};
 	}
 
 	// incrementFileName: only relevant when hitting record multiple times
@@ -77,6 +85,7 @@ RecordControl {
 			incrementFileName.if{
 				if (recCnt > 0) {
 					fileName = format("%_%", baseFileName, recCnt);
+					this.changed(\filename, fileName);
 				};
 				recCnt = recCnt+1;
 			};
@@ -113,6 +122,7 @@ RecordControl {
 		this.prBuildSynthDef;
 		this.prCheckRecState;
 		this.changed(\numchannels, numChannels);
+		this.prUpdatePlotter;
 	}
 
 	busnum_ { |busOrIndex|
@@ -133,6 +143,7 @@ RecordControl {
 		};
 		this.prCheckRecState;
 		this.changed(\busnum, busnum);
+		this.prUpdatePlotter;
 	}
 
 	fileName_ { |string|
@@ -159,13 +170,64 @@ RecordControl {
 		)
 	}
 
+	plot { |overlay|
+		overlay !? {overlayPlot = overlay};
+
+		plotter ?? {
+			var win;
+			plotter = ControlPlotter(busnum, numChannels, 50, 25, \linear, overlayPlot);
+
+			win = plotter.mon.plotter.parent;
+
+			prevPlotWinBounds !? { win.bounds_(prevPlotWinBounds) };
+			prevPlotBounds !? {plotter.bounds_(*prevPlotBounds)};
+			plotter.start;
+			plotting = true;
+
+			win.view.onMove_({|v| prevPlotWinBounds= v.findWindow.bounds });
+
+			plotter.mon.plotter.parent.onClose_({ |me|
+				plotter = nil;
+				plotting = false;
+			})
+		}
+	}
+
+	overlayPlot_ { |bool|
+		if (overlayPlot != bool) {
+			overlayPlot = bool;
+			this.prUpdatePlotter;
+		};
+	}
+
+	setPlotterBounds { |...args|
+		prevPlotBounds = args;
+		plotter !? { plotter.bounds_(*args) }
+	}
+
+	// when numChannels or busnum changes
+	prUpdatePlotter {
+		plotter !? {
+			fork({
+				var cnt=0;
+				plotter.free;
+				while ( {(plotter != nil) and: (cnt < 20)},
+					{0.05.wait; cnt = cnt+1;}
+				);
+				if (plotter != nil) {
+					"Could not clear the old plotter in time".warn;
+				} { this.plot };
+			}, AppClock);
+		}
+	}
+
 	openDirectory {
 		directory.openOS
 	}
 
 	free {
 		this.stop;
-		gui !? {gui.free};
+		gui !? {gui.free; gui=nil};
 	}
 
 
@@ -262,6 +324,8 @@ r.dump
 
 r.makeGui
 
+r.plot
+
 r.record
 r.record(incrementFileName:false)
 r.stop
@@ -269,6 +333,7 @@ r.stop
 r.openDirectory // find the files
 
 r.numChannels_(2)
+r.overlayPlot_(true)
 r.busnum_(a.bus)
 r.sampleFormat = "int24"
 r.headerFormat = "aiff"
