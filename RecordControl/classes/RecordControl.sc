@@ -5,17 +5,23 @@ RecordControl {
 	var <busnum, <fileName, <directory, <>verbose=true;
 	var <buffer, <recPath, <recording=false;
 	var bufPrepared=false, dataRecorded=false, recCnt=0;
-	var wrSynth, baseFileName;
+	var wrSynth, baseFileName, <gui;
 
-	*new { |busOrIndex, numChannels=1, fileName, directory, headerFormat = "WAV", sampleFormat = "int32", overwrite=false, appendKr=true, server|
+	*new { |busOrIndex, numChannels=1, fileName, directory, headerFormat = "WAV", sampleFormat = "int32", overwrite=false, appendKr=true, server, makeGui=false|
 		^super.newCopyArgs(
 			numChannels, headerFormat, sampleFormat, overwrite, appendKr, server
-		).init(busOrIndex, fileName, directory);
+		).init(busOrIndex, fileName, directory, makeGui);
 	}
 
-	init { |argBus, argFileName, argDirectory|
+	init { |argBus, argFileName, argDirectory, makeGui|
 		// handle unspecified vars
-		if (argBus.isNil) { Error("Unspecified bus or bus index.").throw };
+		if (argBus.isNil) {
+			var er;
+			er = Error("Unspecified bus or bus index.");
+			this.changed(\error, er.errorString);
+			er.throw;
+
+		};
 
 		server = server ?? Server.default;
 
@@ -44,6 +50,12 @@ RecordControl {
 		server.doWhenBooted({ this.prBuildSynthDef });
 
 		CmdPeriod.doOnce {this.free};
+
+		makeGui.if{ this.makeGui };
+	}
+
+	makeGui {
+		gui = RecordControlView(this)
 	}
 
 	// incrementFileName: only relevant when hitting record multiple times
@@ -51,7 +63,12 @@ RecordControl {
 	//   -  false: defer to overwrite setting: either overwrites file or errors out because file exists
 	record { |incrementFileName=true|
 		// already recording?
-		recording.if{Error("Already recording! this.stop first.").throw};
+		recording.if{
+			var er;
+			er = Error("Already recording! this.stop first.");
+			this.changed(\error, er.errorString);
+			er.throw;
+		};
 
 		// prepare another buffer, increment fileName
 		Routine.run({
@@ -82,17 +99,20 @@ RecordControl {
 			buffer !? {
 				this.prCleanupBuffer;
 				recording = false;
-				this.changed(\recording, recording);
 			};
-			verbose.if {wasRecording.if {"Recording finished".postln} };
+
+			wasRecording.if {
+				this.changed(\recording, recording);
+				verbose.if {"Recording finished".postln}
+			};
 		}
 	}
 
 	numChannels_ { |n|
-		numChannels = n;
+		numChannels = n.asInt;
 		this.prBuildSynthDef;
 		this.prCheckRecState;
-		this.changed(\numChannels, numChannels);
+		this.changed(\numchannels, numChannels);
 	}
 
 	busnum_ { |busOrIndex|
@@ -106,7 +126,11 @@ RecordControl {
 		{busOrIndex.respondsTo('bus')} { //CtkBus, without dependency
 			busnum = busOrIndex.bus
 		}
-		{ Error("Unrecognized bus type").throw };
+		{ var er;
+			er = Error("Unrecognized bus type");
+			this.changed(\error, er.errorString);
+			er.throw;
+		};
 		this.prCheckRecState;
 		this.changed(\busnum, busnum);
 	}
@@ -116,11 +140,13 @@ RecordControl {
 		baseFileName = fileName;
 		recCnt = 0;  // reset file name increment counter
 		this.prCheckRecState;
+		this.changed(\filename, fileName);
 	}
 
 	directory_{ |path|
 		directory = this.prCheckValidDir(path);
 		this.prCheckRecState;
+		this.changed(\dirname, directory);
 	}
 
 	// open Dialog to select recording directory
@@ -139,13 +165,19 @@ RecordControl {
 
 	free {
 		this.stop;
+		gui !? {gui.free};
 	}
 
 
 	/* PRIVATE */
 
 	prBeginRecording {
-		bufPrepared.not.if {Error("Recording buffer hasn't been prepared. Cannot record!").throw};
+		bufPrepared.not.if {
+			var er;
+			er = Error("Recording buffer hasn't been prepared. Cannot record!");
+			this.changed(\error, er.errorString);
+			er.throw;
+		};
 
 		// record
 		wrSynth = Synth(\controlWr_++numChannels++\ch,
@@ -155,8 +187,8 @@ RecordControl {
 
 		dataRecorded = true;
 		recording = true;
-		this.changed(\recording, recording);
 		verbose.if {postf("Recording % channels to %\n", numChannels, recPath)};
+		this.changed(\recording, recording);
 	}
 
 	prCleanupBuffer {
@@ -176,7 +208,11 @@ RecordControl {
 
 	prCheckValidDir { |path|
 		if (PathName( path ).isFolder.not) {
-			Error(format("Invalid directory: %\n", path)).throw
+			var er;
+			Error(format("Invalid directory: %\n", path));
+			this.changed(\error, er.errorString);
+			er.throw;
+
 		} { ^path };
 	}
 
@@ -190,7 +226,10 @@ RecordControl {
 		recPath = directory +/+ fileName ++ appendKr.if({"_kr."},{"."}) ++ headerFormat;
 
 		if (File.exists(recPath) and: overwrite.not) {
-			Error("File already exists. Choose another fileName or set overwrite=true").throw
+			var er;
+			er = Error("File already exists. Choose another fileName or set overwrite=true");
+			this.changed(\error, er.errorString);
+			er.throw;
 		};
 
 		buffer = Buffer.alloc(server, 65536*2 / server.options.blockSize, numChannels);
@@ -220,6 +259,8 @@ r = RecordControl( a.bus, 2, "ctlTestSix", "~/Desktop/test".standardizePath, ove
 r = RecordControl( a.bus, 2, "ctlTestSix", "~/Desktop/test".standardizePath, overwrite:false)
 r = RecordControl( a.bus, 2, directory: "~/Desktop/test".standardizePath, overwrite:false)
 r.dump
+
+r.makeGui
 
 r.record
 r.record(incrementFileName:false)
