@@ -21,7 +21,7 @@ RecordControlView {
 		recorder.addDependant(this);
 		color = Color.newHex("#61AAA8");
 		this.makeWin;
-		win.onClose({ this.free })
+		win.onClose_({ this.free })
 	}
 
 	makeWin {
@@ -66,11 +66,13 @@ RecordControlView {
 	defineActions {
 		[
 			fnTxt, { |txt|
-				if (txt.string != "fileName") {
-					recorder.fileName_(txt.string);
-				} {
-					recorder.fileName_(Date.getDate.stamp);
-				};
+				recorder.fileName_(
+					if (txt.string != "fileName") {
+						recorder.fileName_(txt.string);
+					} {
+						Date.getDate.stamp;
+					}
+				);
 				txt.stringColor_(Color.black);
 			},
 
@@ -113,14 +115,10 @@ RecordControlView {
 
 			recBut, { |but|
 				if (but.value.asBoolean) {
-					// if (fnTxt.string != "fileName") {
-					// fnTxt.doAction; // in case it wasn't submitted
-					// recorder.fileName_(fnTxt.string); // in case it wasn't submitted
-					// };
 					recorder.record;
-					// un-click the button in case recordin fails
-					fork({
-						1.wait;
+
+					fork({  // un-click the button in case recording fails
+						0.7.wait;
 						if (recorder.recording.not) {but.value = 0};
 					}, AppClock);
 				} {
@@ -160,7 +158,9 @@ RecordControlView {
 			obj.action_(action);
 		};
 
-		fnTxt.mouseDownAction_{fnTxt.stringColor_(Color.gray)};
+		fnTxt.mouseDownAction_{
+			fnTxt.stringColor_(Color.gray)
+		};
 	}
 
 	layOutControls {
@@ -186,10 +186,10 @@ RecordControlView {
 								HLayout(
 									VLayout(
 										HLayout(
-											plotBut,
-											nil,
-											StaticText().string_("overlay").align_(\right),
-											overlayChk,
+											plotBut.fixedWidth_(85),
+											// nil,
+											// StaticText().string_("overlay").align_(\right),
+											// overlayChk,
 										),
 										10,
 										StaticText().string_("Plot Bounds").align_(\center),
@@ -225,6 +225,7 @@ RecordControlView {
 				VLayout(
 					[recBut, a: \top],
 					HLayout(
+						nil,
 						owrChk,
 						owrTxt.align_(\left).minWidth_(owrTxt.string.bounds.width+3),
 						nil
@@ -265,7 +266,7 @@ RecordControlView {
 		win.isClosed.not.if {win.close};
 	}
 
-	// TODO
+
 	update {
 		|who, what ... args|
 

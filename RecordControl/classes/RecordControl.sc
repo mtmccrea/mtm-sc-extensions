@@ -185,6 +185,7 @@ RecordControl {
 			plotting = true;
 
 			win.view.onMove_({|v| prevPlotWinBounds= v.findWindow.bounds });
+			win.view.onResize_({|v| prevPlotWinBounds= v.findWindow.bounds });
 
 			plotter.mon.plotter.parent.onClose_({ |me|
 				plotter = nil;
@@ -203,22 +204,6 @@ RecordControl {
 	setPlotterBounds { |...args|
 		prevPlotBounds = args;
 		plotter !? { plotter.bounds_(*args) }
-	}
-
-	// when numChannels or busnum changes
-	prUpdatePlotter {
-		plotter !? {
-			fork({
-				var cnt=0;
-				plotter.free;
-				while ( {(plotter != nil) and: (cnt < 20)},
-					{0.05.wait; cnt = cnt+1;}
-				);
-				if (plotter != nil) {
-					"Could not clear the old plotter in time".warn;
-				} { this.plot };
-			}, AppClock);
-		}
 	}
 
 	openDirectory {
@@ -265,6 +250,22 @@ RecordControl {
 	prCheckRecState {
 		if (recording) {
 			"Currently recording, update will take effect on next .record".warn;
+		}
+	}
+
+	// when numChannels or busnum changes
+	prUpdatePlotter {
+		plotter !? {
+			fork({
+				var cnt=0;
+				plotter.free;
+				while ( {(plotter != nil) and: (cnt < 20)},
+					{0.05.wait; cnt = cnt+1;}
+				);
+				if (plotter != nil) {
+					"Could not clear the old plotter in time".warn;
+				} { this.plot };
+			}, AppClock);
 		}
 	}
 
@@ -318,7 +319,7 @@ b = CtkControl.lfo(LFTri).play
 
 r = RecordControl( a.bus, 2, "ctlTestTwo", "~/Desktop/test".standardizePath, appendKr:false)
 r = RecordControl( a.bus, 2, "ctlTestSix", "~/Desktop/test".standardizePath, overwrite:true)
-r = RecordControl( a.bus, 2, "ctlTestSix", "~/Desktop/test".standardizePath, overwrite:false)
+r = RecordControl( a.bus, 2, "pqqwe", "~/Desktop/test".standardizePath, overwrite:false)
 r = RecordControl( a.bus, 2, directory: "~/Desktop/test".standardizePath, overwrite:false)
 r.dump
 

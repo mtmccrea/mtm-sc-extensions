@@ -152,10 +152,11 @@ PlayControl {
 
 /* usage
 ~path = "/Users/admin/Desktop/test/ctlTestTwo_1.WAV";
-p = PlayControl(~path)
+~player = PlayControl(~path)
 
-p.play
+~player.play
 
-c = ControlPlotter(p.playBus.index, p.numChannels, 50, plotMode: \linear, overlay: false).start
+c = ControlPlotter(~player.playBus.index, ~player.numChannels, 50, plotMode: \linear, overlay: false).start
 
+~player.free
 */
