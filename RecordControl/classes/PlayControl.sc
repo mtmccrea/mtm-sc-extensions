@@ -106,6 +106,7 @@ PlayControl {
 		synth !? { synth.set(\rate, rateRatio) };
 		rate = rateRatio;
 	}
+
 	// pos in frames
 	resetPos_ { |pos|
 		synth !? { synth.set(\resetPos, pos) };
@@ -122,6 +123,7 @@ PlayControl {
 		synth !? { synth.set(\end, pos) };
 		end = pos;
 	}
+
 	replyRate_ { |rate|
 		synth !? { synth.set(\replyRate, rate) };
 		replyRate = rate;
@@ -142,6 +144,11 @@ PlayControl {
 	}
 	selEnd_{ |pos|
 		this.end_(pos * this.numFrames);
+	}
+
+	clearSelection {
+		this.start_(0);
+		this.end_(this.numFrames);
 	}
 
 	makeGui {
