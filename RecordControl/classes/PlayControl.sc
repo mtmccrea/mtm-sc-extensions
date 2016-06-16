@@ -59,20 +59,20 @@ PlayControl {
 
 		synthdef = SynthDef(defname, {arg outbus, bufnum, rate=1, start=0, end,  t_reset=0, resetPos=0, replyRate=10;
 			var phsr, bfrd;
-			phsr = Phasor.kr(t_reset, BufRateScale.kr(bufnum) * rate, start, end);
+			phsr = Phasor.kr(t_reset, BufRateScale.kr(bufnum) * rate, start, end, resetPos);
 			SendReply.kr(Impulse.kr(replyRate), '/playhead', phsr);
 			bfrd = BufRd.kr(nch, bufnum, phsr);
 			Out.kr(outbus, bfrd);
 		}).send(server);
-		"here".postln;
+
 		this.prBuildPlayheadResponder;
-		"here2".postln;
+
 		finishCondition !? {finishCondition.test_(true).signal};
 	}
 
 	prBuildPlayheadResponder {
 		playheadResp !? {playheadResp.free};
-		"here3".postln;
+
 		playheadResp = OSCFunc(
 			{ |msg| playhead = msg[3] },
 			'/playhead', server.addr, nil, [synth.asNodeID]
@@ -115,6 +115,7 @@ PlayControl {
 	start_ { |pos|
 		synth !? { synth.set(\start, pos) };
 		start = pos;
+		this.resetPos_(pos);
 	}
 	// pos in frames
 	end_ { |pos|
@@ -128,6 +129,11 @@ PlayControl {
 
 	stop {
 		synth.isRunning.if { synth.run(false) }
+	}
+
+	reset {
+		synth !? { synth.set(\t_reset, 1) };
+		playhead = resetPos; // push the playhead to reset point in case synth isn't running
 	}
 
 	// set selection, normalized
