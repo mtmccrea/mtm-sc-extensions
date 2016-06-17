@@ -1,12 +1,13 @@
 PlayControl {
 	//copyArgs
 	var path;
-	var <buffer, <server;
+	var <buffer, <server, <gui;
 	var <synthdef, <synth, <playBus, <playhead=0;
 	var defname, playheadResp;
+	var <trimStart, <trimEnd, trimLength;
 
 	// synth args
-	var <rate=1, <start=0, <end, <resetPos=0, <replyRate=10;
+	var <rate=1, <start, <end, <resetPos=0, <replyRate=10;
 
 	*new { |path, makeGui=true, server|
 		^super.newCopyArgs(path).init(makeGui, server)
@@ -30,10 +31,15 @@ PlayControl {
 
 				playBus = Bus.control(server, this.numChannels);
 
+				trimStart = 0;
+				trimEnd = this.numFrames;
+				start = trimStart;
+				end = trimEnd;
+
 				this.prBuildSynthDef(cond);
 				cond.wait;
 
-				this.makeGui;
+				if (makeGui) {this.makeGui};
 			}
 		}
 	}
@@ -88,7 +94,7 @@ PlayControl {
 				\buffer, buffer.bufnum,
 				\rate, rate,
 				\start, start,
-				\end, end ?? this.numFrames,
+				\end, end,
 				\resetPos, resetPos,
 				\replyRate, replyRate
 			]);
@@ -108,22 +114,22 @@ PlayControl {
 	}
 
 	// pos in frames
-	resetPos_ { |pos|
-		synth !? { synth.set(\resetPos, pos) };
-		resetPos = pos;
+	resetPos_ { |frame|
+		synth !? { synth.set(\resetPos, frame) };
+		resetPos = frame;
 	}
-	// pos in frames
-	start_ { |pos|
-		synth !? { synth.set(\start, pos) };
-		start = pos;
-		this.resetPos_(pos);
+	// start of the phasor, in frames
+	start_ { |frame|
+		synth !? { synth.set(\start, frame) };
+		start = frame;
+		this.resetPos_(frame);
 	}
-	// pos in frames
-	end_ { |pos|
-		synth !? { synth.set(\end, pos) };
-		end = pos;
+	// end of the phasor, in frames
+	end_ { |frame|
+		synth !? { synth.set(\end, frame) };
+		end = frame;
 	}
-
+	// rate that the playhead variable is updated
 	replyRate_ { |rate|
 		synth !? { synth.set(\replyRate, rate) };
 		replyRate = rate;
@@ -138,21 +144,32 @@ PlayControl {
 		playhead = resetPos; // push the playhead to reset point in case synth isn't running
 	}
 
-	// set selection, normalized
+	// set loop selection, normalized to trim size
 	selStart_{ |pos|
-		this.start_(pos * this.numFrames);
+		// this.start_(pos * this.numFrames);
+		this.start_(trimStart + (pos * this.trimLength));
 	}
 	selEnd_{ |pos|
-		this.end_(pos * this.numFrames);
+		// this.end_(pos * this.numFrames);
+		this.end_(trimEnd + (pos * this.trimLength));
 	}
+
+	// trim beginning and end
+	trimStart_{ |frame|
+		trimStart = frame;
+	}
+	trimEnd_{ |frame|
+		trimEnd = frame;
+	}
+	trimLength { ^(trimEnd - trimStart) }
 
 	clearSelection {
-		this.start_(0);
-		this.end_(this.numFrames);
+		this.start_(trimStart);
+		this.end_(trimEnd);
 	}
 
-	makeGui {
-
+	makeGui { |plotWidth=600, plotHeight=400|
+		gui = PlayControlView(this, plotWidth, plotHeight);
 	}
 
 	free {
@@ -166,6 +183,8 @@ PlayControl {
 /* usage
 ~path = "/Users/admin/Desktop/test/ctlTestTwo_1.WAV";
 ~player = PlayControl(~path)
+
+~player.makeGui;
 
 ~player.play
 
