@@ -9,7 +9,6 @@ PlayControlView {
 	var selstart=0, selend=0; // selection normalized 0>1
 
 
-
 	*new { |aPlayControl, plotWidth=400, plotHeight=400|
 		^super.newCopyArgs(aPlayControl, plotWidth, plotHeight).init;
 	}
@@ -20,6 +19,7 @@ PlayControlView {
 			this.prMakeWindow;
 			this.prInitPlotter;
 			this.prMakeUserView;
+			this.prReplot;
 			win.onClose_({ this.free });
 			win.front;
 			}.defer;
@@ -116,8 +116,8 @@ PlayControlView {
 			Pen.fillColor_(Color.red.alpha_(0.5));
 			Pen.fillRect(
 				Rect(
-					((player.playhead-player.trimStart)/player.trimLength)*width -(phw/2), 0,
-					phw, bnds.height
+					((player.playhead-player.trimStart)/player.trimLength) * width - (phw/2),
+					0, phw, bnds.height
 				)
 			);
 
@@ -154,16 +154,19 @@ PlayControlView {
 
 	// start: first frame in buffer to plot
 	// count: number of frames to plot
-	prRePlot { |start, count|
-		var separately = false;
-		var minval, maxval;
+	prReplot { |start, count|
+		var separately = false, st, cnt;
+		// var minval, maxval;
+		st = start ? 0;
+		cnt = cnt ? player.numFrames;
+
 		// note: this writes a soundfile to disk, then loads that data to
 		// an array. This is stable but potentially redundant, given the buffer
 		// is already loaded. getToFloatArray requests values directly from the
 		// buffer on the server, but is less stable, data may be lost in high traffic.
 		player.buffer.loadToFloatArray(
-			index:start,
-			count:count,
+			index: st,
+			count: cnt,
 			// index:0,
 			// count:-1, // all frames
 			action: { |array, buf|
@@ -173,17 +176,17 @@ PlayControlView {
 						findSpecs: true,
 						separately: separately,
 						refresh: false,
-						minval: minval,
-						maxval: maxval
+						// minval: minval,
+						// maxval: maxval
 					);
-					plotter.domainSpecs = ControlSpec(0.0, buf.numFrames, units:"frames");
+					plotter.domainSpecs = ControlSpec(st, st+cnt, units:"frames");
 					plotter.refresh;
 				}.defer
 		});
 	}
 
 	prGetUvBounds {
-		Rect(plotView.bounds.left+15,  plotView.bounds.top, plotView.bounds.width-(15*2), plotView.bounds.height)
+		^Rect(plotView.bounds.left+15,  plotView.bounds.top, plotView.bounds.width-(15*2), plotView.bounds.height)
 	}
 
 	free {

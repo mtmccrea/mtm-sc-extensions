@@ -5,6 +5,7 @@ PlayControl {
 	var <synthdef, <synth, <playBus, <playhead=0;
 	var defname, playheadResp;
 	var <trimStart, <trimEnd, trimLength;
+	var pauseResp; // temp getter
 
 	// synth args
 	var <rate=1, <start, <end, <resetPos=0, <replyRate=10;
@@ -54,13 +55,44 @@ PlayControl {
 	numChannels {^buffer.numChannels}
 
 	prBuildSynthDef { |finishCondition|
-		var nch;
+		var nch, msg;
 		nch = this.numChannels;
 		defname = (\playCntrlBuf_++nch++'ch').asSymbol;
 
-		// create the node, without putting it on the server
 		synth !? {synth.free};
+
+		// create the node, without putting it on the server,
 		synth = Synth.basicNew(defname, server);
+		NodeWatcher.register(synth);
+
+		// create a newMsg, to be sent following
+		// SynthDef being received by server
+		msg = synth.newMsg(nil, [
+			\outbus, playBus,
+			\buffer, buffer.bufnum,
+			\rate, 0, 		// start with a paused playhead
+			\start, start,
+			\end, end,
+			\resetPos, resetPos,
+			\replyRate, replyRate
+		]);
+
+		// this func listens for the synth to start,
+		// immediately pauses it, and restores it's rate from 0
+		pauseResp = OSCFunc(
+			{
+				server.makeBundle(nil, {
+					synth.run(false);
+					synth.set(\rate, rate);
+				});
+				"found running".postln; },
+			'/n_go', server.addr, nil, [synth.asNodeID]
+		).oneShot;
+
+		// msg = server.makeBundle(false, {
+		// 	synth = Synth.newPaused(defname);
+		// 	}
+		// );
 		NodeWatcher.register(synth);
 
 		synthdef = SynthDef(defname, {arg outbus, bufnum, rate=1, start=0, end,  t_reset=0, resetPos=0, replyRate=10;
@@ -69,7 +101,7 @@ PlayControl {
 			SendReply.kr(Impulse.kr(replyRate), '/playhead', phsr);
 			bfrd = BufRd.kr(nch, bufnum, phsr);
 			Out.kr(outbus, bfrd);
-		}).send(server);
+		}).send(server, msg);
 
 		this.prBuildPlayheadResponder;
 
@@ -151,7 +183,7 @@ PlayControl {
 	}
 	selEnd_{ |pos|
 		// this.end_(pos * this.numFrames);
-		this.end_(trimEnd + (pos * this.trimLength));
+		this.end_(pos * this.trimLength);
 	}
 
 	// trim beginning and end
@@ -177,6 +209,7 @@ PlayControl {
 		playBus.free;
 		buffer.free;
 		playheadResp !? {playheadResp.free};
+		pauseResp !? {pauseResp.free};
 	}
 }
 
