@@ -140,11 +140,11 @@ PlayControl {
 	busnum { ^playBus.index }
 
 	/* synth setters */
+
 	rate_ { |rateRatio|
 		synth !? { synth.set(\rate, rateRatio) };
 		rate = rateRatio;
 	}
-
 	// pos in frames
 	resetPos_ { |frame|
 		synth !? { synth.set(\resetPos, frame) };
@@ -166,6 +166,7 @@ PlayControl {
 		synth !? { synth.set(\replyRate, rate) };
 		replyRate = rate;
 	}
+
 
 	stop {
 		synth.isRunning.if { synth.run(false) }

@@ -8,7 +8,7 @@ RecordControl {
 	var wrSynth, baseFileName, <gui;
 	var <plotter, <plotting = false, prevPlotWinBounds, prevPlotBounds, overlayPlot=false;
 
-	*new { |busOrIndex, numChannels=1, fileName, directory, headerFormat = "WAV", sampleFormat = "int32", overwrite=false, appendKr=true, server, makeGui=false|
+	*new { |busOrIndex, numChannels=1, fileName, directory, headerFormat = "WAV", sampleFormat = "float", overwrite=false, appendKr=true, server, makeGui=false|
 		^super.newCopyArgs(
 			numChannels, headerFormat, sampleFormat, overwrite, appendKr, server
 		).init(busOrIndex, fileName, directory, makeGui);
@@ -314,8 +314,8 @@ RecordControl {
 }
 
 /* Usage
-a = CtkControl.lfo(SinOsc).play
-b = CtkControl.lfo(LFTri).play
+a = CtkControl.lfo(SinOsc, low: -2, high:3).play
+b = CtkControl.lfo(LFTri, low: -22, high:13).play
 
 r = RecordControl( a.bus, 2, "ctlTestTwo", "~/Desktop/test".standardizePath, appendKr:false)
 r = RecordControl( a.bus, 2, "ctlTestSix", "~/Desktop/test".standardizePath, overwrite:true)
@@ -336,7 +336,7 @@ r.openDirectory // find the files
 r.numChannels_(2)
 r.overlayPlot_(true)
 r.busnum_(a.bus)
-r.sampleFormat = "int24"
+r.sampleFormat = "float"
 r.headerFormat = "aiff"
 r.appendKr = false
 r.fileName_("newNameCtlTestSeven")

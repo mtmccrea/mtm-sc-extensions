@@ -66,13 +66,11 @@ RecordControlView {
 	defineActions {
 		[
 			fnTxt, { |txt|
-				recorder.fileName_(
-					if (txt.string != "fileName") {
-						recorder.fileName_(txt.string);
-					} {
-						Date.getDate.stamp;
-					}
-				);
+				if (txt.string != "fileName") {
+					recorder.fileName_(txt.string);
+				} {
+					recorder.fileName_(Date.getDate.stamp);
+				};
 				txt.stringColor_(Color.black);
 			},
 
