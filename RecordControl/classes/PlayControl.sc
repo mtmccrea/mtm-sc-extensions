@@ -215,11 +215,14 @@ PlayControl {
 }
 
 /* usage
-~path = "/Users/admin/Desktop/test/ctlTestTwo_1.WAV";
+// ~path = "/Users/admin/Desktop/test/us_rec_session1/amp_1_kr.WAV";
+~path = "/Users/admin/Desktop/test/us_session2/pos_kr.WAV";
+~path = "/Users/admin/Desktop/test/us_session2/amp_kr.WAV";
 ~player = PlayControl(~path)
+~player2 = PlayControl(~path)
 
 ~player.makeGui;
-
+~player.gui.plot
 ~player.play
 
 c = ControlPlotter(~player.playBus.index, ~player.numChannels, 50, plotMode: \linear, overlay: false).start

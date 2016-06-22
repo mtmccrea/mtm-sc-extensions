@@ -181,6 +181,7 @@ RecordControl {
 
 			prevPlotWinBounds !? { win.bounds_(prevPlotWinBounds) };
 			prevPlotBounds !? {plotter.bounds_(*prevPlotBounds)};
+			overlayPlot.if{ plotter.plotColors_(numChannels.collect{Color.rand(0.3, 0.7)}) };
 			plotter.start;
 			plotting = true;
 
@@ -253,7 +254,7 @@ RecordControl {
 		}
 	}
 
-	// when numChannels or busnum changes
+	// when overlay, numChannels, or busnum changes
 	prUpdatePlotter {
 		plotter !? {
 			fork({

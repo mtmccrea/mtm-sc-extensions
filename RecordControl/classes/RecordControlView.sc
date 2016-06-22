@@ -36,8 +36,8 @@ RecordControlView {
 		numChNb = NumberBox().value_(recorder.numChannels);
 		plotBut = Button().states_([["Plot Signal"]]);
 		overlayChk = CheckBox();
-		bndLoNb = NumberBox().value_(0);
-		bndHiNb = NumberBox().value_(1);
+		bndLoNb = NumberBox().value_(0).stringColor_(Color.gray);
+		bndHiNb = NumberBox().value_(1).stringColor_(Color.gray);
 		autoChk = CheckBox().value_(1);
 		recBut = Button().states_([["Record", Color.black, Color.red.alpha_(0.5)],["Stop", Color.black, Color.yellow.alpha_(0.5) ]]);
 		statusTxt = StaticText().string_("Select a recording directory.").align_(\left);
@@ -134,19 +134,23 @@ RecordControlView {
 
 			autoChk, { |chk|
 				if (chk.value.asBoolean) {
-					recorder.setPlotterBounds(\auto)
+					recorder.setPlotterBounds(\auto);
+					[bndLoNb, bndHiNb].do{|nb| nb.stringColor_(Color.gray)};
 				} {
 					recorder.setPlotterBounds(bndLoNb.value, bndHiNb.value);
+					[bndLoNb, bndHiNb].do{|nb| nb.stringColor_(Color.black)};
 				}
 			},
 
 			bndLoNb, { |nb|
 				recorder.setPlotterBounds(nb.value, bndHiNb.value);
 				autoChk.value_(0);
+				[nb, bndHiNb].do{|nb| nb.stringColor_(Color.black)};
 			},
 			bndHiNb, { |nb|
 				recorder.setPlotterBounds(bndLoNb.value, nb.value);
 				autoChk.value_(0);
+				[bndLoNb, nb].do{|nb| nb.stringColor_(Color.black)};
 			},
 
 		].clump(2).do {

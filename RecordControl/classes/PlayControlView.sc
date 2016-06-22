@@ -5,8 +5,10 @@ PlayControlView {
 	var win, uv, plotter, plotView;
 	var playBut, rateNb, resetBut, clearSelBut;
 	var selendTxt, selstartTxt, seldurTxt;
+	var plotBut, overlayChk, autoChk, bndLoNb, bndHiNb;
 	var selectionActive=false;
 	var selstart=0, selend=0; // selection normalized 0>1
+	var <livePlotter, plotting=false, prevPlotWinBounds, prevPlotBounds, overlayOutputPlot = false;
 
 
 	*new { |aPlayControl, plotWidth=400, plotHeight=400|
@@ -40,6 +42,47 @@ PlayControlView {
 		selstartTxt = StaticText().string_("0:00");
 		selendTxt = StaticText().string_("0:00");
 		seldurTxt = StaticText().string_("0:00");
+		plotBut = Button().states_([["Plot Signal"],["Close Plot"]]).action_({
+			|but|
+			but.value.asBoolean.if(
+				{this.plot},
+				{livePlotter !? {livePlotter.mon.plotter.parent.close} }
+			)
+		});
+
+		overlayChk = CheckBox().action_({ |chk|
+				this.overlayOutputPlot_(chk.value.asBoolean)
+		});
+
+		autoChk = CheckBox()
+		.value_(1)
+		.action_({ |chk|
+			if (chk.value.asBoolean) {
+				this.setPlotterBounds(\auto);
+				[bndLoNb, bndHiNb].do{|nb| nb.stringColor_(Color.gray)};
+			} {
+				this.setPlotterBounds(bndLoNb.value, bndHiNb.value);
+				[bndLoNb, bndHiNb].do{|nb| nb.stringColor_(Color.black)};
+			}
+		});
+
+		bndLoNb = NumberBox()
+		.value_(0).stringColor_(Color.gray)
+		.action_({
+			|nb|
+			this.setPlotterBounds(nb.value, bndHiNb.value);
+			autoChk.value_(0);
+			bndHiNb.stringColor_(Color.black);
+		});
+
+		bndHiNb =  NumberBox()
+		.value_(1).stringColor_(Color.gray)
+		.action_({
+			|nb|
+			this.setPlotterBounds(bndLoNb.value, nb.value);
+			autoChk.value_(0);
+			bndLoNb.stringColor_(Color.black);
+		});
 
 		win = Window("Play control signals");
 
@@ -67,7 +110,21 @@ PlayControlView {
 								StaticText().string_("dur: ").align_(\right),
 								seldurTxt.align_(\left),
 							),
-							nil
+							nil,
+							plotBut,
+							HLayout(
+								StaticText().string_("overlay"), nil,
+								overlayChk
+							),
+							StaticText().string_("Bounds").align_(\center),
+							HLayout(
+								StaticText().string_("auto"), nil,
+								autoChk
+							),
+							HLayout(
+								StaticText().string_("lo"), bndLoNb,
+								StaticText().string_("hi"), bndHiNb
+							)
 						)
 					)
 				),
@@ -79,7 +136,7 @@ PlayControlView {
 					5,
 					resetBut,
 					clearSelBut,
-					nil
+					nil,
 				)
 			).margins_(0).spacing_(0)
 		);
@@ -129,10 +186,15 @@ PlayControlView {
 			player.selStart_(selstart.clip(0,1));
 			selectionActive = true;
 			uv.refresh;
+			// tempselstart = tempjumpTo= x/v.bounds.width;
+			// downx = x;
 		};
 
 		uv.mouseMoveAction_{
 			|v, x y|
+
+			// selstart = tempselstart;
+
 			selend = x/v.bounds.width;
 			player.selEnd_(selend.clip(0,1));
 			uv.refresh;
@@ -189,9 +251,68 @@ PlayControlView {
 		^Rect(plotView.bounds.left+15,  plotView.bounds.top, plotView.bounds.width-(15*2), plotView.bounds.height)
 	}
 
+	/* plot the output */
+	plot { |overlay|
+		overlay !? {overlayOutputPlot = overlay};
+
+		if (livePlotter.isNil) {
+			var win;
+			livePlotter = ControlPlotter(player.busnum, player.numChannels, 50, 25, \linear, overlayOutputPlot);
+
+			win = livePlotter.mon.plotter.parent;
+
+			prevPlotWinBounds !? { win.bounds_(prevPlotWinBounds) };
+			prevPlotBounds !? {livePlotter.bounds_(*prevPlotBounds)};
+			overlayOutputPlot.if{livePlotter.plotColors_(player.numChannels.collect{Color.rand(0.3, 0.7)})};
+			livePlotter.start;
+			plotting = true;
+
+			win.view.onMove_({|v| prevPlotWinBounds= v.findWindow.bounds });
+			win.view.onResize_({|v| prevPlotWinBounds= v.findWindow.bounds });
+			plotBut.value_(1);
+
+			livePlotter.mon.plotter.parent.onClose_({ |me|
+				livePlotter = nil;
+				plotting = false;
+				plotBut.value_(0);
+			})
+		} {
+			livePlotter.mon.plotter.parent.front;
+		};
+	}
+
+	overlayOutputPlot_ { |bool|
+		if (overlayOutputPlot != bool) {
+			overlayOutputPlot = bool;
+			this.prUpdateLivePlotter;
+		};
+	}
+
+	// when overlay, numChannels, or busnum changes
+	prUpdateLivePlotter {
+		livePlotter !? {
+			fork({
+				var cnt=0;
+				livePlotter.free;
+				while ( {(livePlotter != nil) and: (cnt < 20)},
+					{0.05.wait; cnt = cnt+1;}
+				);
+				if (livePlotter != nil) {
+					"Could not clear the old livePlotter in time".warn;
+				} { this.plot };
+			}, AppClock);
+		}
+	}
+
+	setPlotterBounds { |...args|
+		prevPlotBounds = args;
+		livePlotter !? { livePlotter.bounds_(*args) }
+	}
+
 	free {
 		player.removeDependant(this);
 		plotter = nil;
 		win.isClosed.not.if {win.close};
+		livePlotter !? {livePlotter.mon.plotter.parent.close};
 	}
 }
