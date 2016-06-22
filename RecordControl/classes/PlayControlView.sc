@@ -143,6 +143,7 @@ PlayControlView {
 	}
 
 	prMakeUserView {
+		var dragged=false, tempselstart;
 
 		/* User View */
 		uv  = UserView(plotView, this.prGetUvBounds);
@@ -182,28 +183,40 @@ PlayControlView {
 
 		uv.mouseDownAction_{
 			|v, x y|
-			selstart = selend = x/v.bounds.width;
-			player.selStart_(selstart.clip(0,1));
-			selectionActive = true;
+			// selstart = selend = x/v.bounds.width;
+			// player.selStart_(selstart.clip(0,1));
+
+			// selectionActive = true;
+
 			uv.refresh;
-			// tempselstart = tempjumpTo= x/v.bounds.width;
-			// downx = x;
+
+			tempselstart = x/v.bounds.width;
+			// mdownx = x;
 		};
 
 		uv.mouseMoveAction_{
 			|v, x y|
 
 			// selstart = tempselstart;
-
+			selectionActive = true;
+			dragged = true;
+			selstart = tempselstart;
 			selend = x/v.bounds.width;
-			player.selEnd_(selend.clip(0,1));
+			// player.selEnd_(selend.clip(0,1));
 			uv.refresh;
 		};
 
 		uv.mouseUpAction_{
 			|v, x y|
-			postf("st: %  end: %  len: %\n", selstart, selend, selend-selstart);
-			player.selEnd_(selend.clip(0,1));
+			if (dragged) {
+				postf("st: %  end: %  len: %\n", selstart, selend, selend-selstart);
+				player.selStart_(selstart.clip(0,1));
+				player.selEnd_(selend.clip(0,1));
+				player.reset;
+				dragged = false;
+			} {
+				player.jumpTo_(x/v.bounds.width);
+			};
 			uv.refresh;
 		};
 
@@ -248,7 +261,8 @@ PlayControlView {
 	}
 
 	prGetUvBounds {
-		^Rect(plotView.bounds.left+15,  plotView.bounds.top, plotView.bounds.width-(15*2), plotView.bounds.height)
+		// ^Rect(plotView.bounds.left+15,  plotView.bounds.top, plotView.bounds.width-(15*2), plotView.bounds.height)
+		^Rect(15,  0, plotView.bounds.width-(15*2), plotView.bounds.height)
 	}
 
 	/* plot the output */

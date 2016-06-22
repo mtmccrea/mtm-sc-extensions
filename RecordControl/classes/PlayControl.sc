@@ -5,7 +5,7 @@ PlayControl {
 	var <synthdef, <synth, <playBus, <playhead=0;
 	var defname, playheadResp;
 	var <trimStart, <trimEnd, trimLength;
-	var pauseResp; // temp getter
+	var pauseResp, resetResp;
 
 	// synth args
 	var <rate=1, <start, <end, <resetPos=0, <replyRate=10;
@@ -25,9 +25,9 @@ PlayControl {
 				cond.wait; cond.test = false;
 
 				if (server.sampleRate != buffer.sampleRate) {
-					format("Buffer sample rate and server sample rate do not match!\n Server fs: %\nBuffer fs:%\n",
+					postf("NOTE: Buffer sample rate and server sample rate do not match.\n  This is OK, as long as recording and playback blocksizes match.\n  Server fs: %\n  Buffer fs: %\n",
 						server.sampleRate, buffer.sampleRate
-					).warn;
+					);
 				};
 
 				playBus = Bus.control(server, this.numChannels);
@@ -65,6 +65,8 @@ PlayControl {
 		synth = Synth.basicNew(defname, server);
 		NodeWatcher.register(synth);
 
+		 buffer.bufnum.postln;
+
 		// create a newMsg, to be sent following
 		// SynthDef being received by server
 		msg = synth.newMsg(nil, [
@@ -85,14 +87,11 @@ PlayControl {
 					synth.run(false);
 					synth.set(\rate, rate);
 				});
-				"found running".postln; },
+				// "found running".postln; // debug
+			},
 			'/n_go', server.addr, nil, [synth.asNodeID]
 		).oneShot;
 
-		// msg = server.makeBundle(false, {
-		// 	synth = Synth.newPaused(defname);
-		// 	}
-		// );
 		NodeWatcher.register(synth);
 
 		synthdef = SynthDef(defname, {arg outbus, bufnum, rate=1, start=0, end,  t_reset=0, resetPos=0, replyRate=10;
@@ -133,7 +132,10 @@ PlayControl {
 			msg.postln;
 			server.sendBundle(nil, msg );
 		} {
-			synth.isRunning.not.if { synth.run(true) }
+			synth.isRunning.not.if {
+				synth.run(true);
+
+			}
 		};
 	}
 
@@ -186,8 +188,31 @@ PlayControl {
 		// this.end_(pos * this.numFrames);
 		this.end_(pos * this.trimLength);
 	}
+	// pos normalized to trim size
+	jumpTo_{ |pos|
+		var temp_rpos;
+		temp_rpos = resetPos;
+		this.resetPos_(trimStart + (pos * this.trimLength));
+		this.reset;
+		if (synth.isRunning) {
+			// playhead will jump to resetPos, then restore it
+			fork{ 0.2.wait; this.resetPos_(temp_rpos) };
+		} {
+			// need to schedule reset after the synth resumes
+			// this func listens for the synth to run,
+			// immediately restore resetPos
+			resetResp !? {resetResp.free};
+			resetResp = OSCFunc(
+				{
+					this.resetPos_(temp_rpos);
+					resetResp !? {resetResp.free};
+				},
+				'/n_on', server.addr, nil, [synth.asNodeID]
+			).oneShot;
+		}
+	}
 
-	// trim beginning and end
+	// trim beginning and end, in frames
 	trimStart_{ |frame|
 		trimStart = frame;
 	}
@@ -201,7 +226,7 @@ PlayControl {
 		this.end_(trimEnd);
 	}
 
-	makeGui { |plotWidth=600, plotHeight=400|
+	makeGui { |plotWidth(600), plotHeight(400)|
 		gui = PlayControlView(this, plotWidth, plotHeight);
 	}
 
@@ -211,11 +236,13 @@ PlayControl {
 		buffer.free;
 		playheadResp !? {playheadResp.free};
 		pauseResp !? {pauseResp.free};
+		resetResp !? {resetResp.free};
 	}
 }
 
 /* usage
-// ~path = "/Users/admin/Desktop/test/us_rec_session1/amp_1_kr.WAV";
+
+~path = "/Users/admin/Desktop/test/us_rec_session1/amp_1_kr.WAV";
 ~path = "/Users/admin/Desktop/test/us_session2/pos_kr.WAV";
 ~path = "/Users/admin/Desktop/test/us_session2/amp_kr.WAV";
 ~player = PlayControl(~path)
