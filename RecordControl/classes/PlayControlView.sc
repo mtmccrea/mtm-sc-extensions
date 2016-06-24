@@ -2,9 +2,10 @@ PlayControlView {
 	// copyArgs
 	var player, pw, ph;
 
-	var win, uv, plotter, plotView;
+	var win, uv, <plotter, plotView;
 	var playBut, rateNb, resetBut, clearSelBut;
 	var selendTxt, selstartTxt, seldurTxt;
+	var trimBut, zoomInBut, zoomOutBut, zoomTxt, <>zoomRatio = 0.75, <zoom=100;
 	var plotBut, overlayChk, autoChk, bndLoNb, bndHiNb;
 	var selectionActive=false;
 	var selstart=0, selend=0; // selection normalized 0>1
@@ -66,8 +67,7 @@ PlayControlView {
 			}
 		});
 
-		bndLoNb = NumberBox()
-		.value_(0).stringColor_(Color.gray)
+		bndLoNb = NumberBox().value_(0)
 		.action_({
 			|nb|
 			this.setPlotterBounds(nb.value, bndHiNb.value);
@@ -75,14 +75,31 @@ PlayControlView {
 			bndHiNb.stringColor_(Color.black);
 		});
 
-		bndHiNb =  NumberBox()
-		.value_(1).stringColor_(Color.gray)
+		bndHiNb =  NumberBox().value_(1)
 		.action_({
 			|nb|
 			this.setPlotterBounds(bndLoNb.value, nb.value);
 			autoChk.value_(0);
 			bndLoNb.stringColor_(Color.black);
 		});
+
+		trimBut = Button().states_([["Trim"]])
+		.action_({
+			selectionActive.if {
+				player.trimSelection;
+				"trimming selection from gui".postln;
+				[player.start, player.trimLength].postln;
+				this.prReplot(player.start, player.trimLength);
+			}
+		});
+
+		zoomInBut = Button().states_([["+"]])
+		.action_({ this.zoom_(zoomRatio) });
+
+		zoomOutBut = Button().states_([["-"]])
+		.action_({ this.zoom_(zoomRatio.reciprocal) });
+
+		zoomTxt = StaticText().string_("100%");
 
 		win = Window("Play control signals");
 
@@ -122,8 +139,8 @@ PlayControlView {
 								autoChk
 							),
 							HLayout(
-								StaticText().string_("lo"), bndLoNb,
-								StaticText().string_("hi"), bndHiNb
+								StaticText().string_("lo"), bndLoNb.stringColor_(Color.gray),
+								StaticText().string_("hi"), bndHiNb.stringColor_(Color.gray),
 							)
 						)
 					)
@@ -137,9 +154,29 @@ PlayControlView {
 					resetBut,
 					clearSelBut,
 					nil,
+					[trimBut, a: \right],
+					nil,
+					[zoomOutBut.maxWidth_(30), a: \right],
+					zoomTxt.align_(\center),
+					[zoomInBut.maxWidth_(30), a: \right],
 				)
 			).margins_(0).spacing_(0)
 		);
+	}
+
+	zoom_ { |zoomratio=0.5|
+		var span, start, end;
+		span = (player.trimLength * zoomratio);
+		if ( (span <= player.numFrames) and: (span > 0) ) {
+			start = (player.start + (player.trimLength*0.5) ) - (span*0.5);
+			start = [0, start].maxItem;
+			player.trimStart_(start);
+			player.trimEnd_(start + span);
+			player.clearSelection; // update start and end frames
+			this.prReplot(player.start, player.trimLength);
+			zoom = zoom * zoomratio.reciprocal;
+			{zoomTxt.string_(zoom.round.asString ++ "%")}.defer;
+		};
 	}
 
 	prMakeUserView {
@@ -209,9 +246,9 @@ PlayControlView {
 		uv.mouseUpAction_{
 			|v, x y|
 			if (dragged) {
-				postf("st: %  end: %  len: %\n", selstart, selend, selend-selstart);
-				player.selStart_(selstart.clip(0,1));
-				player.selEnd_(selend.clip(0,1));
+				player.selStart_([selstart, selend].minItem.clip(0,1));
+				player.selEnd_([selstart, selend].maxItem.clip(0,1));
+				postf("st: %  end: %  len: %\n", selstart, selend, (selend-selstart).abs);
 				player.reset;
 				dragged = false;
 			} {
@@ -233,7 +270,9 @@ PlayControlView {
 		var separately = false, st, cnt;
 		// var minval, maxval;
 		st = start ? 0;
-		cnt = cnt ? player.numFrames;
+		cnt = count ? player.numFrames;
+
+		postf("replotting \n\tfrom % \n\tto % \n\tover %\n", st.round, (st+cnt).round, cnt.round);
 
 		// note: this writes a soundfile to disk, then loads that data to
 		// an array. This is stable but potentially redundant, given the buffer
@@ -254,8 +293,10 @@ PlayControlView {
 						// minval: minval,
 						// maxval: maxval
 					);
-					plotter.domainSpecs = ControlSpec(st, st+cnt, units:"frames");
+					// plotter.domainSpecs = ControlSpec(st, st+cnt, units:"frames");
+					plotter.domainSpecs = ControlSpec(0, cnt, units:"frames");
 					plotter.refresh;
+					selectionActive=false;
 				}.defer
 		});
 	}

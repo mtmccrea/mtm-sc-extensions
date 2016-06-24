@@ -154,12 +154,14 @@ PlayControl {
 	}
 	// start of the phasor, in frames
 	start_ { |frame|
+		postf(" start: %\n", frame);
 		synth !? { synth.set(\start, frame) };
 		start = frame;
 		this.resetPos_(frame);
 	}
 	// end of the phasor, in frames
 	end_ { |frame|
+		postf(" end: %\n", frame);
 		synth !? { synth.set(\end, frame) };
 		end = frame;
 	}
@@ -181,13 +183,21 @@ PlayControl {
 
 	// set loop selection, normalized to trim size
 	selStart_{ |pos|
+		postf("norm selStart: %\n", pos);
 		// this.start_(pos * this.numFrames);
 		this.start_(trimStart + (pos * this.trimLength));
 	}
 	selEnd_{ |pos|
+		postf("norm selEnd: %\n", pos);
 		// this.end_(pos * this.numFrames);
-		this.end_(pos * this.trimLength);
+		this.end_(trimStart + (pos * this.trimLength));
 	}
+
+	clearSelection {
+		this.start_(trimStart);
+		this.end_(trimEnd);
+	}
+
 	// pos normalized to trim size
 	jumpTo_{ |pos|
 		var temp_rpos;
@@ -215,15 +225,20 @@ PlayControl {
 	// trim beginning and end, in frames
 	trimStart_{ |frame|
 		trimStart = frame;
+		postf("trimStart: %\n", trimStart);
 	}
 	trimEnd_{ |frame|
 		trimEnd = frame;
+		postf("trimEnd: %\n", trimEnd);
+		postf("trimLength: %\n", this.trimLength);
 	}
 	trimLength { ^(trimEnd - trimStart) }
 
-	clearSelection {
-		this.start_(trimStart);
-		this.end_(trimEnd);
+	// trim to current selection
+	trimSelection {
+		this.trimStart = start;
+		this.trimEnd = end;
+		this.clearSelection;
 	}
 
 	makeGui { |plotWidth(600), plotHeight(400)|
