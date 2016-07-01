@@ -226,6 +226,7 @@ PlayControl {
 	trimStart_{ |frame|
 		trimStart = frame;
 		postf("trimStart: %\n", trimStart);
+		postf("trimLength: %\n", this.trimLength);
 	}
 	trimEnd_{ |frame|
 		trimEnd = frame;

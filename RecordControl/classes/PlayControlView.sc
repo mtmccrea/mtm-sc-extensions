@@ -5,7 +5,7 @@ PlayControlView {
 	var win, uv, <plotter, plotView;
 	var playBut, rateNb, resetBut, clearSelBut;
 	var selendTxt, selstartTxt, seldurTxt;
-	var trimBut, zoomInBut, zoomOutBut, zoomTxt, <>zoomRatio = 0.75, <zoom=100;
+	var trimBut, zoomInBut, zoomOutBut, zoomTxt, <>zoomRatio = 0.75, <zoom=1;
 	var plotBut, overlayChk, autoChk, bndLoNb, bndHiNb;
 	var selectionActive=false;
 	var selstart=0, selend=0; // selection normalized 0>1
@@ -90,6 +90,8 @@ PlayControlView {
 				"trimming selection from gui".postln;
 				[player.start, player.trimLength].postln;
 				this.prReplot(player.start, player.trimLength);
+				zoom = player.trimLength / player.numFrames;
+				{zoomTxt.string_((zoom * 100).round.asString ++ "%")}.defer;
 			}
 		});
 
@@ -164,19 +166,38 @@ PlayControlView {
 		);
 	}
 
+	// zoom from current trim boundaries
 	zoom_ { |zoomratio=0.5|
-		var span, start, end;
-		span = (player.trimLength * zoomratio);
+		var span, newMidpoint, newStart, newEnd;
+		span = (player.trimLength * zoomratio).clip(0, player.numFrames);
+
 		if ( (span <= player.numFrames) and: (span > 0) ) {
-			start = (player.start + (player.trimLength*0.5) ) - (span*0.5);
-			start = [0, start].maxItem;
-			player.trimStart_(start);
-			player.trimEnd_(start + span);
+			newMidpoint = player.trimStart + (player.trimLength*0.5);
+			newStart = newMidpoint - (span*0.5);
+			newEnd = newMidpoint + (span*0.5);
+
+			if (newStart<0) {
+				newStart = newStart.abs
+			};
+			if (newEnd > player.numFrames) {
+				newStart = newStart - (newEnd - player.numFrames);
+			};
+
+			// start = newMidpoint - (span*0.5);
+			// start = [0, start].maxItem;
+			player.trimStart_(newStart);
+			player.trimEnd_(newStart + span);
 			player.clearSelection; // update start and end frames
-			this.prReplot(player.start, player.trimLength);
-			zoom = zoom * zoomratio.reciprocal;
-			{zoomTxt.string_(zoom.round.asString ++ "%")}.defer;
+
+			this.prReplot(player.trimStart, player.trimLength);
+			zoom = player.trimLength / player.numFrames;
+			{zoomTxt.string_((zoom * 100).round.asString ++ "%")}.defer;
 		};
+	}
+
+	// zoom to a specific magnification 0>1, relative to full buffer size
+	zoomTo_ { |absZoomRatio|
+		this.zoom_(absZoomRatio / zoom);
 	}
 
 	prMakeUserView {
