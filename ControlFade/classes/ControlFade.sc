@@ -156,7 +156,7 @@ ControlFade {
 
 					{	// just update current lfo params
 
-						"UGen already current, just updating its params".postln;
+						// "UGen already current, just updating its params".postln; // debug
 						// switch from static to lfo if necessary
 						if( mixSynth.ctlSrcDex == 0 )
 						{
