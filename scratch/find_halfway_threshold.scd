@@ -14,17 +14,18 @@
 		searching
 	},{
 		halfIdx = ~seekToHalf.(lowIdx, highIdx);
-		prevIdx = lowIdx;
 
 		postf("halfIdx: %, %\n", halfIdx, ~times[halfIdx]);
 
 		idxTime = ~times[halfIdx];
+
+		// #lowIdx, highIdx = [prevIdx, halfIdx].sort;
 		if (idxTime < seconds) {
 			// landed below threshold
-			highIdx = prevIdx;
+			highIdx = [lowIdx, highIdx].maxItem;
 			lowIdx = halfIdx;
 		} { // landed above threshold
-			lowIdx = prevIdx;
+			lowIdx = [lowIdx, highIdx].minItem;
 			highIdx = halfIdx;
 		};
 
@@ -37,6 +38,7 @@
 				halfIdx + 1
 			}
 		} {
+			prevIdx = halfIdx;
 			cnt = cnt+1;
 		}
 	}
