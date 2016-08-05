@@ -10,18 +10,18 @@ PlayControl {
 	// synth args
 	var <rate=1, <start, <end, <resetPos=0, <replyRate=10;
 
-	*new { |path, makeGui=true, server|
-		^super.newCopyArgs(path).init(makeGui, server)
+	*new { |path, chanDex=0, numChans, makeGui=true, server|
+		^super.newCopyArgs(path).init(chanDex, numChans, makeGui, server)
 	}
 
-	init { |makeGui, argServer|
+	init { |chanDex=0, numChans, makeGui, argServer|
 		server = argServer ?? Server.default;
 
 		server.waitForBoot {
 			fork{
 				var cond = Condition();
 
-				this.loadBuffer(cond);
+				this.loadBuffer(chanDex, numChans, cond);
 				cond.wait; cond.test = false;
 
 				if (server.sampleRate != buffer.sampleRate) {
@@ -45,10 +45,23 @@ PlayControl {
 		}
 	}
 
-	loadBuffer { |finishCondition|
-		buffer = Buffer.read(server, path,
-			action: { finishCondition !? {finishCondition.test_(true).signal} }
-		);
+	loadBuffer { |chanDex=0, numChans, finishCondition|
+		if (numChans.isNil and: chanDex.isKindOf(Array).not) {
+			buffer = Buffer.read(server, path,
+				action: { finishCondition !? {finishCondition.test_(true).signal} }
+			);
+		} {
+			var chans;
+			chans = if(chanDex.isKindOf(Array)) {
+				chanDex
+			} {
+				(chanDex..chanDex+(numChans-1))
+			};
+
+			buffer = Buffer.readChannel(server, path, channels: chans,
+				action: { finishCondition !? {finishCondition.test_(true).signal} }
+			);
+		}
 	}
 
 	numFrames {^buffer.numFrames}
