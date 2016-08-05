@@ -6,11 +6,11 @@ RecordControlView {
 	var winHeight = 100;
 	var nbw = 25;
 
-	var fnTxt, dirTxt, dirBut, openDirBut, owrChk, owrTxt;
+	var fnTxt, dirTxt, dirBut, curDirBut, openDirBut, owrChk, owrTxt;
 	var posBusTxt, busTxt, numChNb, recBut, statusTxt;
 	var overlayChk, plotBut, <plotter, prevPlotBounds, plotting=false;
 	var bndLoNb, bndHiNb, autoChk;
-	var statusUpdateRoutine, color;
+	var statusUpdateRoutine, color, localDir;
 	var <win;
 
 	*new { |anControlRecorder|
@@ -18,6 +18,7 @@ RecordControlView {
 	}
 
 	init {
+		localDir = "".resolveRelative;
 		recorder.addDependant(this);
 		color = Color.newHex("#61AAA8");
 		this.makeWin;
@@ -29,6 +30,7 @@ RecordControlView {
 		fnTxt = TextField().string_(recorder.fileName).stringColor_(Color.gray);
 		dirTxt = StaticText().string_(recorder.directory).stringColor_(Color.gray);
 		dirBut = Button().states_([["Select directory"]]);
+		curDirBut = Button().states_([["Rec to current directory"]]);
 		openDirBut = Button().states_([["Open directory"]]);
 		owrChk = CheckBox();
 		owrTxt = StaticText().string_("Overwrite");
@@ -80,6 +82,19 @@ RecordControlView {
 
 				recorder.selectDirectory;
 				but.states_([["Select directory"]]); // change back to normal color
+			},
+
+			curDirBut, { |but|
+				// submit filename in case it wasn't already
+				fnTxt.doAction;
+
+				try {
+					recorder.directory_(localDir);
+				} { |err|
+					err.errorString.warn;
+					defer {statusTxt.string_(err.errorString)};
+				};
+				but.states_([["Rec to current directory"]]); // change back to normal color
 			},
 
 			openDirBut, {
@@ -176,7 +191,11 @@ RecordControlView {
 						VLayout(
 							StaticText().string_("File name").align_(\center),
 							[fnTxt.fixedWidth_(150).align_(\center), a: \center],
-							[dirBut.fixedWidth_(110), a: \center],
+							HLayout(
+								[dirBut.fixedWidth_(110), a: \left],
+								nil,
+								[curDirBut, a: \right],
+							),
 							[dirTxt.minWidth_(300).align_(\center).minHeight_(50).background_(Color.white), a: \center],
 						)
 					),

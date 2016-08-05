@@ -324,6 +324,10 @@ r = RecordControl( a.bus, 2, "pqqwe", "~/Desktop/test".standardizePath, overwrit
 r = RecordControl( a.bus, 2, directory: "~/Desktop/test".standardizePath, overwrite:false)
 r.dump
 
+r = RecordControl(3)
+r.makeGui
+"".resolveRelative
+
 r.makeGui
 
 r.plot
