@@ -9,6 +9,11 @@
 //      same color: follow level
 // Meter is multi-colored: level colors are represented in
 //      tiers, not as a single block that changes color
+// Reconsider how values are set externally - make better, more clear
+//      use of Spec. Test case, you have a amp signal you want displayed
+//      in dB. Set amp value, then internally use Spec with dB scaling to
+//      set the meter level. Right now I'm sending in dB values directly
+// Add an alpha layer to create a "trace" (with "clear" trace button)
 
 LevelMeter : View {
 	var orientation, rangeLabelAlign, levelLabelAlign;
