@@ -25,6 +25,8 @@ LevelMeter : View {
 	var protoRangeVal, rangeFont;
 	var protoLevelVal, levelFont;
 
+	var labelView, levelView;
+
 	var <>valueNorm=1, <>peakValueNorm = 1;
 	var <spec, roundTo=0.1;
 	var <thresholds, <thresholdsNorm, <thresholdColors;
@@ -66,6 +68,8 @@ LevelMeter : View {
 		this.rangeTxtFont_(Font.default, "-000");
 
 		meterView = UserView().minWidth_(5);
+
+		meterView.onResize_({this.updateLabelViewSize});
 
 		this.makeMeterView;
 		this.assebleElements;
@@ -123,26 +127,73 @@ LevelMeter : View {
 		// masterLayout.add(meterLayout, stretch: 1);
 
 		levelLabelAlign !? {
-			var align;
+			var align, levelLayout;
+			levelLayout = VLayout().margins_(0);
+			levelView = View().layout_(levelLayout);
+
 			align = switch (rangeLabelAlign,
 				\left, {\right}, \right, {\left}, nil, {\center}
 			);
-			[pkTxt, valTxt].do{|txt,i|
-				txt.align_(align);
-				if (levelLabelAlign == \bottom) {
-					masterLayout.add( txt, align: align)
-				} {
-					masterLayout.insert( txt, i, align: align)
-				}
+			[pkTxt, valTxt].do{|txt| levelLayout.add(txt.align_(align), align: \center)};
+
+			if (levelLabelAlign == \bottom) {
+				masterLayout.add( levelView, align: align)
+			} {
+				masterLayout.insert( levelView, align: align)
 			};
 		};
 
 		labelTxt !? {
+			var align, labelLayout;
+			labelLayout = VLayout().margins_(0);
+			labelView = View().layout_(labelLayout);
+
+			labelLayout.add(labelTxt, align: \center);
+
+			align = switch (rangeLabelAlign,
+				\left, {\right}, \right, {\left}, nil, {\center}
+			);
+
 			switch (labelAlign,
-				\bottom, {masterLayout.add(labelTxt, align: \center)},
-				{masterLayout.insert(labelTxt, align: \center)} // default to top
+				\bottom, {masterLayout.add(labelView, align: align)},
+				{masterLayout.insert(labelView, align: align)} // default to top
 			)
 		};
+
+		// levelLabelAlign !? {
+		// 	var align;
+		// 	align = switch (rangeLabelAlign,
+		// 		\left, {\right}, \right, {\left}, nil, {\center}
+		// 	);
+		// 	[pkTxt, valTxt].do{|txt,i|
+		// 		txt.align_(align);
+		// 		if (levelLabelAlign == \bottom) {
+		// 			masterLayout.add( txt, align: align)
+		// 		} {
+		// 			masterLayout.insert( txt, i, align: align)
+		// 		}
+		// 	};
+		// };
+		//
+		// labelTxt !? {
+		// 	switch (labelAlign,
+		// 		\bottom, {masterLayout.add(labelTxt, align: \center)},
+		// 		{masterLayout.insert(labelTxt, align: \center)} // default to top
+		// 	)
+		// };
+	}
+
+	updateLabelViewSize {
+		var mvbw;
+		mvbw = meterView.bounds.width;
+		// labelView !? {labelView.fixedWidth_(mvbw)};
+		// levelView !? {levelView.fixedWidth_(mvbw)};
+		// labelView !? {labelView.minWidth_(mvbw)};
+		// levelView !? {levelView.minWidth_(mvbw)};
+		// labelView !? {labelView.maxWidth_(mvbw)};
+		// levelView !? {levelView.maxWidth_(mvbw)};
+		labelView !? {labelView.maxWidth_(maxItem([mvbw,labelTxt.bounds.width]))};
+		levelView !? {levelView.maxWidth_(maxItem([mvbw,valTxt.bounds.width]))};
 	}
 
 	// val is the normalized level
@@ -336,13 +387,20 @@ w.view.layout_(HLayout(*l));
 
 (
 w = Window().front;
+l = 12.collect{|i| LevelMeter(label: i, rangeLabelAlign: nil)};
+l.do(_.spec_(ControlSpec(-100, 0)));
+w.view.layout_(HLayout(*l));
+)
+
+(
+w = Window().front;
 l = [
-	LevelMeter(label: 0, rangeLabelAlign: \left, levelLabelAlign: \top),
-	LevelMeter(label: 1, rangeLabelAlign: \right, levelLabelAlign: \top),
-	LevelMeter(label: 2, rangeLabelAlign: \left, levelLabelAlign: \bottom),
-	LevelMeter(label: 3, rangeLabelAlign: \right, levelLabelAlign: \bottom),
-	LevelMeter(label: 4, rangeLabelAlign: \left, levelLabelAlign: nil),
-	LevelMeter(label: 5, rangeLabelAlign: nil, levelLabelAlign: \top),
+LevelMeter(label: "chan0", rangeLabelAlign: \left, levelLabelAlign: \top),
+LevelMeter(label: "chan1", rangeLabelAlign: \right, levelLabelAlign: \top),
+LevelMeter(label: "chan2", rangeLabelAlign: \left, levelLabelAlign: \bottom),
+LevelMeter(label: "chan3", rangeLabelAlign: \right, levelLabelAlign: \bottom),
+LevelMeter(label: "chan4", rangeLabelAlign: \left, levelLabelAlign: nil),
+LevelMeter(label: "chan5", rangeLabelAlign: nil, levelLabelAlign: \top),
 ];
 w.view.layout_(HLayout(*l))
 )
@@ -374,8 +432,20 @@ l.do(_.decimals_(0))
 l.do(_.levelTxtFont_(protoString: "-00"))
 l.do(_.rangeTxtFont_(protoString: "-00"))
 l.do({|mtr| mtr.minWidth_(65)})
-l.do({|mtr| mtr.maxWidth_(45)})
+l.do({|mtr| mtr.minWidth_(85)})
+l.do({|mtr| mtr.maxWidth_(15)})
 w.view.layout.add(nil)
+
+
+(
+w = Window().front;
+l = [
+LevelMeter(label: "chan0", rangeLabelAlign: \left, levelLabelAlign: \top),
+LevelMeter(label: "chan1", rangeLabelAlign: nil, levelLabelAlign: \top).fixedWidth_(65),
+];
+w.view.layout_(HLayout(*l))
+)
+l[1].maxWidth_(65)
 
 */
 //
