@@ -56,12 +56,12 @@ LevelMeter : View {
 		defaultColor = Color.green;
 
 		label !? {
-			labelTxt = StaticText().string_(label.asString).align_(\center).background_(Color.rand);
+			labelTxt = StaticText().string_(label.asString).align_(\center);/*.background_(Color.rand);*/
 		};
-		valTxt = StaticText().string_("0").background_(Color.rand);
-		pkTxt = StaticText().string_("0").background_(Color.rand);
-		minTxt = StaticText().string_("0").background_(Color.rand);
-		maxTxt = StaticText().string_("1").background_(Color.rand);
+		valTxt = StaticText().string_("0");/*.background_(Color.rand);*/
+		pkTxt = StaticText().string_("0");/*.background_(Color.rand);*/
+		minTxt = StaticText().string_("0");/*.background_(Color.rand);*/
+		maxTxt = StaticText().string_("1");/*.background_(Color.rand);*/
 
 		this.labelTxtFont_(Font.default);
 		this.levelTxtFont_(Font.default, "-00.00");
@@ -131,33 +131,58 @@ LevelMeter : View {
 			levelLayout = VLayout().margins_(0);
 			levelView = View().layout_(levelLayout);
 
-			align = switch (rangeLabelAlign,
-				\left, {\right}, \right, {\left}, nil, {\center}
+			align = switch (levelLabelAlign,
+				\bottomLeft, {\left}, \bottom, {\center}, \bottomRight, {\right},
+				\topLeft, {\left}, \top, {\center}, \topRight, {\right},
+				{\center}
 			);
-			[pkTxt, valTxt].do{|txt| levelLayout.add(txt.align_(align), align: \center)};
 
-			if (levelLabelAlign == \bottom) {
-				masterLayout.add( levelView, align: align)
-			} {
-				masterLayout.insert( levelView, align: align)
-			};
+			[pkTxt, valTxt].do{|txt| levelLayout.add(txt.align_(align), align: align)};
+
+			switch (levelLabelAlign,
+				\bottomLeft, {masterLayout.add(levelView, align: \left)},
+				\bottom, {masterLayout.add(levelView, align: \center)},
+				\bottomRight, {masterLayout.add(levelView, align: \right)},
+
+				\topLeft, {masterLayout.insert(levelView, align: \left)},
+				\top, {masterLayout.insert(levelView, align: \center)},
+				\topRight, {masterLayout.insert(levelView, align: \right)}
+			);
 		};
 
 		labelTxt !? {
-			var align, labelLayout;
-			labelLayout = VLayout().margins_(0);
-			labelView = View().layout_(labelLayout);
+			// var align, labelLayout;
+			// labelLayout = HLayout(
+			// 	nil,
+			// 	[labelTxt, a: \center],
+			// 	nil,
+			// ).margins_(0);
+			//
+			// labelView = View().layout_(labelLayout).resize_(5);
 
-			labelLayout.add(labelTxt, align: \center);
+			// align = switch (rangeLabelAlign,
+			// 	\left, {\right}, \right, {\left}, nil, {\center}
+			// );
 
-			align = switch (rangeLabelAlign,
-				\left, {\right}, \right, {\left}, nil, {\center}
-			);
+			// switch (labelAlign,
+			// 	\bottomLeft, {masterLayout.add(labelView, align: \left)},
+			// 	\bottom, {masterLayout.add(labelView, align: \center)},
+			// 	\bottomRight, {masterLayout.add(labelView, align: \right)},
+			//
+			// 	\topLeft, {masterLayout.insert(labelView, align: \left)},
+			// 	\top, {masterLayout.insert(labelView, align: \center)},
+			// 	\topRight, {masterLayout.insert(labelView, align: \right)}
+			// );
 
 			switch (labelAlign,
-				\bottom, {masterLayout.add(labelView, align: align)},
-				{masterLayout.insert(labelView, align: align)} // default to top
-			)
+				\bottomLeft, {masterLayout.add(labelTxt, align: \left)},
+				\bottom, {masterLayout.add(labelTxt, align: \center)},
+				\bottomRight, {masterLayout.add(labelTxt, align: \right)},
+
+				\topLeft, {masterLayout.insert(labelTxt, align: \left)},
+				\top, {masterLayout.insert(labelTxt, align: \center)},
+				\topRight, {masterLayout.insert(labelTxt, align: \right)}
+			);
 		};
 
 		// levelLabelAlign !? {
@@ -184,16 +209,16 @@ LevelMeter : View {
 	}
 
 	updateLabelViewSize {
-		var mvbw;
-		mvbw = meterView.bounds.width;
-		// labelView !? {labelView.fixedWidth_(mvbw)};
-		// levelView !? {levelView.fixedWidth_(mvbw)};
-		// labelView !? {labelView.minWidth_(mvbw)};
-		// levelView !? {levelView.minWidth_(mvbw)};
-		// labelView !? {labelView.maxWidth_(mvbw)};
-		// levelView !? {levelView.maxWidth_(mvbw)};
-		labelView !? {labelView.maxWidth_(maxItem([mvbw,labelTxt.bounds.width]))};
-		levelView !? {levelView.maxWidth_(maxItem([mvbw,valTxt.bounds.width]))};
+		// var mvbw;
+		// mvbw = meterView.bounds.width;
+		// // labelView !? {labelView.fixedWidth_(mvbw)};
+		// // levelView !? {levelView.fixedWidth_(mvbw)};
+		// // labelView !? {labelView.minWidth_(mvbw)};
+		// // levelView !? {levelView.minWidth_(mvbw)};
+		// // labelView !? {labelView.maxWidth_(mvbw)};
+		// // levelView !? {levelView.maxWidth_(mvbw)};
+		// labelView !? {labelView.maxWidth_(maxItem([mvbw,labelTxt.bounds.width]))};
+		// levelView !? {levelView.maxWidth_(maxItem([mvbw,valTxt.bounds.width]))};
 	}
 
 	// val is the normalized level
@@ -274,14 +299,27 @@ LevelMeter : View {
 	}
 
 	spec_ { |controlSpec|
+		var min, max, minString, maxString;
 		spec = controlSpec;
 
-		minTxt.string = controlSpec.minval.asString;
-		maxTxt.string = controlSpec.maxval.asString;
+		min = controlSpec.minval;
+		max = controlSpec.maxval;
+		minString = min.asString;
+		maxString = max.asString;
+
+		minTxt.string = minString;
+		maxTxt.string = maxString;
 
 		// update thresholds, NOTE: can't collect into a List!
 		thresholds.do{|thresh, i|
 			thresholdsNorm[i] = spec.unmap(thresh)
+		};
+		// update the size of the range text views
+		rangeLabelAlign !? {
+			var strSizes;
+			strSizes = [minString.size, maxString.size];
+			this.rangeTxtFont_(
+				protoString: [minString, maxString].at(strSizes.indexOf(strSizes.maxItem)));
 		};
 	}
 
@@ -394,6 +432,19 @@ w.view.layout_(HLayout(*l));
 
 (
 w = Window().front;
+l = 12.collect{|i| LevelMeter(label: i, rangeLabelAlign: nil, labelAlign: \bottom)};
+l.do(_.spec_(ControlSpec(-100, 0)));
+w.view.layout_(HLayout(*l));
+)
+(
+w = Window().front;
+l = 12.collect{|i| LevelMeter(label: i, rangeLabelAlign: nil, levelLabelAlign: \bottomRight, labelAlign: \bottom)};
+l.do(_.spec_(ControlSpec(-100, 0)));
+w.view.layout_(HLayout(*l));
+)
+
+(
+w = Window().front;
 l = [
 LevelMeter(label: "chan0", rangeLabelAlign: \left, levelLabelAlign: \top),
 LevelMeter(label: "chan1", rangeLabelAlign: \right, levelLabelAlign: \top),
@@ -428,6 +479,7 @@ l.do(_.removeThresh(0));
 l.do(_.levelFontSize_(8))
 l.do(_.rangeFontSize_(8))
 l.do(_.minWidth_(10))
+l.do(_.maxWidth_(25))
 l.do(_.decimals_(0))
 l.do(_.levelTxtFont_(protoString: "-00"))
 l.do(_.rangeTxtFont_(protoString: "-00"))
@@ -440,12 +492,21 @@ w.view.layout.add(nil)
 (
 w = Window().front;
 l = [
-LevelMeter(label: "chan0", rangeLabelAlign: \left, levelLabelAlign: \top),
-LevelMeter(label: "chan1", rangeLabelAlign: nil, levelLabelAlign: \top).fixedWidth_(65),
+LevelMeter(label: "Car", rangeLabelAlign: \left, levelLabelAlign: \bottomRight, labelAlign: \topRight),
+LevelMeter(label: "SSB", rangeLabelAlign: nil, levelLabelAlign: \bottomRight, labelAlign: \topRight).fixedWidth_(65),
 ];
-w.view.layout_(HLayout(*l))
+w.view.layout_(HLayout(*l));
+l[0].meterWidth_(65);
 )
-l[1].maxWidth_(65)
+
+(
+w = Window().front;
+l = [
+LevelMeter(label: "chan0", rangeLabelAlign: \left, levelLabelAlign: \topRight, labelAlign: \topRight),
+LevelMeter(label: "chan1", rangeLabelAlign: \right, levelLabelAlign: \topLeft, labelAlign: \topLeft)
+];
+w.view.layout_(HLayout(*l.do(_.meterWidth_(40))));
+)
 
 */
 //
