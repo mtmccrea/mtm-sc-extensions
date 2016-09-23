@@ -13,6 +13,7 @@
 // Make a separate class, LevelRangeMeter, for generating a view displaying
 //      the meter range, aligned with there the meter view is in it's
 //      corresponding LevelMeter
+// Add optional peak hold indicator
 
 LevelMeter : View {
 	var orientation, rangeLabelAlign, levelLabelAlign;
@@ -160,7 +161,7 @@ LevelMeter : View {
 
 		meterView = UserView()
 		.resize_(5)
-		.minWidth_(4);
+		.minWidth_(4)
 		.drawFunc_({ |uv|
 			var bnds;
 			bnds = uv.bounds;
