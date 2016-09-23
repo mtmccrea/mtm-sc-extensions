@@ -1,9 +1,5 @@
 // TODO:
 // add \centered mode
-// add optional meter label
-// levels on top or bottom
-// range labels on left or right
-// add method to create arbitrary number of color thresholds
 // add: level and peak rects can be either separate colors
 //      (depending on threshold), same color: follow peak,
 //      same color: follow level
@@ -14,6 +10,9 @@
 //      in dB. Set amp value, then internally use Spec with dB scaling to
 //      set the meter level. Right now I'm sending in dB values directly
 // Add an alpha layer to create a "trace" (with "clear" trace button)
+// Make a separate class, LevelRangeMeter, for generating a view displaying
+//      the meter range, aligned with there the meter view is in it's
+//      corresponding LevelMeter
 
 LevelMeter : View {
 	var orientation, rangeLabelAlign, levelLabelAlign;
@@ -63,29 +62,12 @@ LevelMeter : View {
 		minTxt = StaticText().string_("0");/*.background_(Color.rand);*/
 		maxTxt = StaticText().string_("1");/*.background_(Color.rand);*/
 
-		this.labelTxtFont_(Font.default);
-		this.levelTxtFont_(Font.default, "-00.00");
-		this.rangeTxtFont_(Font.default, "-000");
-
-		meterView = UserView().minWidth_(5);
-
-		meterView.onResize_({this.updateLabelViewSize});
+		this.labelFont_(Font.default);
+		this.levelFont_(Font.default, "-00.00");
+		this.rangeFont_(Font.default, "-000");
 
 		this.makeMeterView;
 		this.assebleElements;
-
-		// masterLayout = VLayout(
-		// 	[pkTxt.align_(\right), a: \topRight],
-		// 	[valTxt.align_(\right), a: \bottomRight],
-		// 	HLayout(
-		// 		VLayout(
-		// 			[maxTxt.align_(\right), a: \topRight],
-		// 			nil,
-		// 			[minTxt.align_(\right), a: \bottomRight]
-		// 		),
-		// 		meterView
-		// 	)
-		// ).margins_(0);
 
 		this.layout_(masterLayout);
 	}
@@ -124,7 +106,6 @@ LevelMeter : View {
 		};
 
 		masterLayout.add(meterLayout, stretch: 2);
-		// masterLayout.add(meterLayout, stretch: 1);
 
 		levelLabelAlign !? {
 			var align, levelLayout;
@@ -151,29 +132,6 @@ LevelMeter : View {
 		};
 
 		labelTxt !? {
-			// var align, labelLayout;
-			// labelLayout = HLayout(
-			// 	nil,
-			// 	[labelTxt, a: \center],
-			// 	nil,
-			// ).margins_(0);
-			//
-			// labelView = View().layout_(labelLayout).resize_(5);
-
-			// align = switch (rangeLabelAlign,
-			// 	\left, {\right}, \right, {\left}, nil, {\center}
-			// );
-
-			// switch (labelAlign,
-			// 	\bottomLeft, {masterLayout.add(labelView, align: \left)},
-			// 	\bottom, {masterLayout.add(labelView, align: \center)},
-			// 	\bottomRight, {masterLayout.add(labelView, align: \right)},
-			//
-			// 	\topLeft, {masterLayout.insert(labelView, align: \left)},
-			// 	\top, {masterLayout.insert(labelView, align: \center)},
-			// 	\topRight, {masterLayout.insert(labelView, align: \right)}
-			// );
-
 			switch (labelAlign,
 				\bottomLeft, {masterLayout.add(labelTxt, align: \left)},
 				\bottom, {masterLayout.add(labelTxt, align: \center)},
@@ -184,41 +142,6 @@ LevelMeter : View {
 				\topRight, {masterLayout.insert(labelTxt, align: \right)}
 			);
 		};
-
-		// levelLabelAlign !? {
-		// 	var align;
-		// 	align = switch (rangeLabelAlign,
-		// 		\left, {\right}, \right, {\left}, nil, {\center}
-		// 	);
-		// 	[pkTxt, valTxt].do{|txt,i|
-		// 		txt.align_(align);
-		// 		if (levelLabelAlign == \bottom) {
-		// 			masterLayout.add( txt, align: align)
-		// 		} {
-		// 			masterLayout.insert( txt, i, align: align)
-		// 		}
-		// 	};
-		// };
-		//
-		// labelTxt !? {
-		// 	switch (labelAlign,
-		// 		\bottom, {masterLayout.add(labelTxt, align: \center)},
-		// 		{masterLayout.insert(labelTxt, align: \center)} // default to top
-		// 	)
-		// };
-	}
-
-	updateLabelViewSize {
-		// var mvbw;
-		// mvbw = meterView.bounds.width;
-		// // labelView !? {labelView.fixedWidth_(mvbw)};
-		// // levelView !? {levelView.fixedWidth_(mvbw)};
-		// // labelView !? {labelView.minWidth_(mvbw)};
-		// // levelView !? {levelView.minWidth_(mvbw)};
-		// // labelView !? {labelView.maxWidth_(mvbw)};
-		// // levelView !? {levelView.maxWidth_(mvbw)};
-		// labelView !? {labelView.maxWidth_(maxItem([mvbw,labelTxt.bounds.width]))};
-		// levelView !? {levelView.maxWidth_(maxItem([mvbw,valTxt.bounds.width]))};
 	}
 
 	// val is the normalized level
@@ -234,7 +157,11 @@ LevelMeter : View {
 	}
 
 	makeMeterView {
-		meterView.drawFunc_({ |uv|
+
+		meterView = UserView()
+		.resize_(5)
+		.minWidth_(4);
+		.drawFunc_({ |uv|
 			var bnds;
 			bnds = uv.bounds;
 
@@ -263,7 +190,7 @@ LevelMeter : View {
 					Size(bnds.width, pkLineSize).asRect.top_(bnds.height*(1-peakValueNorm));
 				);
 			}
-		}).resize_(5);
+		});
 	}
 
 	value_ { |val, refresh=true|
@@ -282,12 +209,13 @@ LevelMeter : View {
 		refresh.if{this.refresh};
 	}
 
-	valueAndPeak_ { |val, pkval|
+	valueAndPeak_ { |val, pkval, refresh=true|
 		this.value_(val, false);
 		this.peakValue_(pkval, false);
-		this.refresh;
+		refresh.if{this.refresh};
 	}
 
+	// refresh the userView meter
 	refresh {
 		meterView.refresh;
 	}
@@ -295,7 +223,9 @@ LevelMeter : View {
 	decimals_{ |num|
 		roundTo = if (num > 0) {
 			("0."++"".padRight(num-1,"0")++"1").asFloat
-		} {1}
+		} {
+			1
+		}
 	}
 
 	spec_ { |controlSpec|
@@ -318,22 +248,22 @@ LevelMeter : View {
 		rangeLabelAlign !? {
 			var strSizes;
 			strSizes = [minString.size, maxString.size];
-			this.rangeTxtFont_(
+			this.rangeFont_(
 				protoString: [minString, maxString].at(strSizes.indexOf(strSizes.maxItem)));
 		};
 	}
 
 	rangeFontSize_ { |num|
 		rangeFont.size_(num);
-		this.rangeTxtFont_(rangeFont)
+		this.rangeFont_(rangeFont)
 	}
 
 	levelFontSize_ { |num|
 		levelFont.size_(num);
-		this.levelTxtFont_(levelFont)
+		this.levelFont_(levelFont)
 	}
 
-	labelTxtFont_ { |font|
+	labelFont_ { |font|
 		var txtSize;
 		if (label.notNil and: font.notNil) {
 			labelFont = font;
@@ -342,7 +272,7 @@ LevelMeter : View {
 		};
 	}
 
-	rangeTxtFont_ { |font, protoString|
+	rangeFont_ { |font, protoString|
 		var txtSize;
 		protoString !? {protoRangeVal = protoString};
 		font !? {
@@ -355,7 +285,7 @@ LevelMeter : View {
 		// [minTxt, maxTxt].do(_.maxSize_(txtSize));
 	}
 
-	levelTxtFont_ { |font, protoString|
+	levelFont_ { |font, protoString|
 		var txtSize;
 		protoString !? {protoLevelVal = protoString};
 		font !? {
@@ -402,12 +332,7 @@ LevelMeter : View {
 
 		thresholds.insert(idx, thresh);
 		thresholdColors.insert(idx, color ?? defaultColor);
-		"pre: ".post;
-		thresholdsNorm.postln;
 		thresholdsNorm.insert(idx, spec.unmap(thresh));
-		"ppost: ".post;
-		thresholdsNorm.postln;
-
 	}
 
 	removeThresh { |index|
@@ -481,8 +406,8 @@ l.do(_.rangeFontSize_(8))
 l.do(_.minWidth_(10))
 l.do(_.maxWidth_(25))
 l.do(_.decimals_(0))
-l.do(_.levelTxtFont_(protoString: "-00"))
-l.do(_.rangeTxtFont_(protoString: "-00"))
+l.do(_.levelFont_(protoString: "-00"))
+l.do(_.rangeFont_(protoString: "-00"))
 l.do({|mtr| mtr.minWidth_(65)})
 l.do({|mtr| mtr.minWidth_(85)})
 l.do({|mtr| mtr.maxWidth_(15)})
