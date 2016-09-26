@@ -3,20 +3,16 @@
 // add: level and peak rects can be either separate colors
 //      (depending on threshold), same color: follow peak,
 //      same color: follow level
-// Meter is multi-colored: level colors are represented in
-//      tiers, not as a single block that changes color
-// Reconsider how values are set externally - make better, more clear
-//      use of Spec. Test case, you have a amp signal you want displayed
-//      in dB. Set amp value, then internally use Spec with dB scaling to
-//      set the meter level. Right now I'm sending in dB values directly
 // Add an alpha layer to create a "trace" (with "clear" trace button)
 // Make a separate class, LevelRangeMeter, for generating a view displaying
 //      the meter range, aligned with there the meter view is in it's
 //      corresponding LevelMeter
-// Add optional peak hold indicator
+// Add optional clip hold indicator
+// LED mode: with LED size specification
 
 LevelMeter : View {
 	var orientation, rangeLabelAlign, levelLabelAlign;
+	var <>stepped = true;
 	var <meterView, <masterLayout, valTxtView;
 	var valTxt, pkTxt, minTxt, maxTxt;
 	var >pkLineSize = 4;
@@ -50,10 +46,11 @@ LevelMeter : View {
 		levelLabelAlign = i_levelLabelAlign;
 
 		spec = ControlSpec();
-		thresholds = List();
-		thresholdColors = List();
-		thresholdsNorm = List();
-		defaultColor = Color.green;
+
+		thresholds = List();		// color thresholds, specified in spec units
+		thresholdColors = List();	// colors for meter (above) each threshold
+		thresholdsNorm = List();	// color thresholds, normalized (unmapped from spec), used in drawing of meter
+		defaultColor = Color.green; // color for below lowest threshold (or if no thresholds specified)
 
 		label !? {
 			labelTxt = StaticText().string_(label.asString).align_(\center);/*.background_(Color.rand);*/
@@ -145,16 +142,85 @@ LevelMeter : View {
 		};
 	}
 
+	getThreshAbove { |val|
+		^thresholdsNorm.indexOfGreaterThan(val);
+	}
+
 	// val is the normalized level
-	lookUpColor { |val|
-		var valIdx = thresholdsNorm.indexOfGreaterThan(val);
+	getColorByVal { |val|
+		var idxAbove = this.getThreshAbove(val);
 		^case
 		// exceeds top thresh
-		{valIdx.isNil} {thresholdColors.last}
+		{idxAbove.isNil} {thresholdColors.last}
 		// below lowest thresh
-		{valIdx == 0} {defaultColor}
+		{idxAbove == 0} {defaultColor}
 		// value is between indeces
-		{thresholdColors[valIdx-1]};
+		{thresholdColors[idxAbove-1]};
+	}
+
+	// meter value is made of multiple rects:
+	// each threshold crossed is it's assigned color
+	drawSteppedMeter { |bnds|
+		var idxAbove, threshIdx;
+		idxAbove = this.getThreshAbove(valueNorm);
+
+		// index of topmost crossed threhold
+		threshIdx =
+		case
+		// exceeds top thresh
+		{idxAbove.isNil} {thresholds.size-1}
+		// below lowest thresh
+		{idxAbove == 0} {-1}
+		// value is between indeces
+		{ idxAbove-1 };
+
+		// draw level
+		if (threshIdx>=0) {
+			var pxThresholds, pxBtwnThreshs, protoRect;
+			// TODO: move this vars out, update on resize and thresh setting changes
+			pxThresholds = thresholdsNorm * bnds.height;
+			pxBtwnThreshs = pxThresholds.differentiate.drop(1);
+
+			protoRect = Size(bnds.width, bnds.height).asRect;
+
+			// bottommost, default color
+			Pen.fillColor_(defaultColor);
+			Pen.fillRect(
+				protoRect.height_(pxThresholds[0]).bottom_(bnds.height);
+			);
+
+			// up through thresh steps
+			threshIdx.do{ |i|
+				Pen.fillColor_(thresholdColors[i]);
+				Pen.fillRect(
+					protoRect.height_(pxBtwnThreshs[i]).bottom_(bnds.height - pxThresholds[i]);
+				);
+			};
+
+			// topmost, inbetween threshold steps
+			Pen.fillColor_(thresholdColors[threshIdx]);
+			Pen.fillRect(
+				protoRect.height_(
+					(valueNorm - thresholdsNorm[threshIdx]) * bnds.height
+				).bottom_(bnds.height - pxThresholds[threshIdx]);
+			);
+
+		} {
+			Pen.fillColor_(defaultColor);
+			Pen.fillRect(
+				Size(bnds.width, bnds.height*valueNorm).asRect.bottom_(bnds.height);
+			);
+		}
+	}
+
+	// meter value is made of one rect color
+	// corresponding to the uppermost threshold crossed
+	drawSolidMeter { |bnds|
+		// draw level
+		Pen.fillColor_(this.getColorByVal(valueNorm));
+		Pen.fillRect(
+			Size(bnds.width, bnds.height*valueNorm).asRect.bottom_(bnds.height);
+		);
 	}
 
 	makeMeterView {
@@ -165,22 +231,21 @@ LevelMeter : View {
 		.drawFunc_({ |uv|
 			var bnds;
 			bnds = uv.bounds;
-
 			if(thresholds.size > 0) {
-				var valCol, pkCol;
-
-				// one meter color
 				// draw level
-				Pen.fillColor_(this.lookUpColor(valueNorm));
-				Pen.fillRect(
-					Size(bnds.width, bnds.height*valueNorm).asRect.bottom_(bnds.height);
-				);
+				if (stepped) {
+					this.drawSteppedMeter(bnds);
+				} {
+					this.drawSolidMeter(bnds);
+				};
+
 				// draw peak
-				Pen.fillColor_(this.lookUpColor(peakValueNorm));
+				Pen.fillColor_(this.getColorByVal(peakValueNorm));
 				Pen.fillRect(
 					Size(bnds.width, pkLineSize).asRect.top_(bnds.height*(1-peakValueNorm));
 				);
 			} {
+				// no thresholds specified, just draw default color
 				Pen.fillColor_(defaultColor);
 				// draw level
 				Pen.fillRect(
@@ -194,6 +259,7 @@ LevelMeter : View {
 		});
 	}
 
+
 	value_ { |val, refresh=true|
 		// set txt before mapping
 		valTxt.string_(val.round(roundTo).asString);
@@ -202,7 +268,7 @@ LevelMeter : View {
 		refresh.if{this.refresh};
 	}
 
-	peakValue_ { |val, refresh=true|
+	peak_ { |val, refresh=true|
 		// set txt before mapping
 		pkTxt.string_(val.round(roundTo).asString);
 		val = spec.unmap(val);
@@ -210,10 +276,22 @@ LevelMeter : View {
 		refresh.if{this.refresh};
 	}
 
-	valueAndPeak_ { |val, pkval, refresh=true|
+	valuePeak_ { |val, pkval, refresh=true|
 		this.value_(val, false);
-		this.peakValue_(pkval, false);
+		this.peak_(pkval, false);
 		refresh.if{this.refresh};
+	}
+
+	// conveniencemethods for the above three,
+	// specifying input as amp, but meter is in dB
+	ampdbValue_ { |amp, refresh=true|
+		this.value_(amp.ampdb, refresh)
+	}
+	ampdbPeak_ { |amp, refresh=true|
+		this.peak_(amp.ampdb, refresh)
+	}
+	ampdbValuePeak_ { |amp, pkamp, refresh=true|
+		this.valuePeak_(amp.ampdb, pkamp.ampdb, refresh)
 	}
 
 	// refresh the userView meter
@@ -222,11 +300,9 @@ LevelMeter : View {
 	}
 
 	decimals_{ |num|
-		roundTo = if (num > 0) {
-			("0."++"".padRight(num-1,"0")++"1").asFloat
-		} {
-			1
-		}
+		roundTo = if (num > 0)
+		{("0."++"".padRight(num-1,"0")++"1").asFloat}
+		{1}
 	}
 
 	spec_ { |controlSpec|
@@ -303,7 +379,7 @@ LevelMeter : View {
 		meterView.fixedWidth_(width);
 	}
 
-	setThresh { |index, thresh, color|
+	setThreshold { |index, thresh, color|
 		if (index < thresholds.size) {
 			this.removeThresh(index);
 			this.addThresh(thresh, color);
@@ -312,7 +388,7 @@ LevelMeter : View {
 		}
 	}
 
-	addThresh { |thresh, color|
+	addThreshold { |thresh, color|
 		var greaterIdx, idx;
 		thresholds.includes(thresh).if{
 			format(
@@ -336,8 +412,12 @@ LevelMeter : View {
 		thresholdsNorm.insert(idx, spec.unmap(thresh));
 	}
 
-	removeThresh { |index|
+	removeThreshold { |index|
 		[thresholds, thresholdsNorm, thresholdColors].do(_.removeAt(index));
+	}
+
+	clearThresholds {
+		[thresholds, thresholdsNorm, thresholdColors].do(_.clear);
 	}
 }
 
@@ -383,24 +463,59 @@ w.view.layout_(HLayout(*l))
 )
 
 (
+w = Window().front;
+l = [
+LevelMeter(label: "chan0", rangeLabelAlign: \left, levelLabelAlign: \top),
+LevelMeter(label: "chan1", rangeLabelAlign: \right, levelLabelAlign: \top),
+];
+w.view.layout_(HLayout(*l))
+)
+
+(
 l.do(_.spec_(ControlSpec(-100, 0)));
-r = fork ({
+t = Task({
 	inf.do{
 
 		l.do{|mtr|
 			var val = rrand(-100, 0.0);
-			mtr.valueAndPeak_(val, val*rrand(0.3, 0.6))};
-		0.3.wait;
+			mtr.valuePeak_(val, val*rrand(0.3, 0.6))};
+		0.1.wait;
 	}
 },AppClock)
 )
-r.stop
+t.start
+t.stop
 
-l.do(_.addThresh(-40, Color.yellow));
-l.do(_.add|Thresh(-20, Color.red));
-l.do(_.setThresh(0, -80, Color.yellow));
-l.do(_.setThresh(1, -5, Color.red));
-l.do(_.removeThresh(0));
+l.do(_.addThreshold(-40, Color.yellow));
+l.do(_.addThreshold(-20, Color.red));
+l.do(_.setThreshold(0, -80, Color.blue));
+l.do(_.setThreshold(1, -5, Color.red));
+l.do(_.removeThreshold(0));
+
+(
+l.do{|mtr|
+	var numsteps=25;
+	var dbstep, colstep;
+	dbstep = mtr.spec.range/numsteps;
+	colstep= numsteps.reciprocal;
+	numsteps.do{|i|
+		mtr.addThreshold(
+			mtr.spec.minval+(dbstep*(i)),
+			// Color.hsv(1-(colstep*i/2),1,1)
+			Color.hsv(0.5-(colstep*i/2),1,1)
+		)
+	}
+}
+)
+
+// toggle stepped display
+l.do(_.stepped_(false))
+l.do(_.stepped_(true))
+
+// clear all thresholds
+l.do(_.do(_.clearThresholds))
+
+l.do{|mtr| mtr.meterView.background_(Color.gray.alpha_(0.2))}
 
 l.do(_.levelFontSize_(8))
 l.do(_.rangeFontSize_(8))
