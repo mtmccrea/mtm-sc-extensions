@@ -9,6 +9,8 @@
 //      corresponding LevelMeter
 // Add optional clip hold indicator
 // LED mode: with LED size specification
+// Add help file with examples
+// Add mode for peak or value only, both in meter and level label
 
 LevelMeter : View {
 	var orientation, rangeLabelAlign, levelLabelAlign;
@@ -405,8 +407,6 @@ LevelMeter : View {
 		{greaterIdx.isNil} {thresholds.size}
 		{greaterIdx};
 
-		postf("greaterIdx %, idx %\n", greaterIdx, idx);
-
 		thresholds.insert(idx, thresh);
 		thresholdColors.insert(idx, color ?? defaultColor);
 		thresholdsNorm.insert(idx, spec.unmap(thresh));
@@ -517,7 +517,7 @@ l.do(_.do(_.clearThresholds))
 
 l.do{|mtr| mtr.meterView.background_(Color.gray.alpha_(0.2))}
 
-l.do(_.levelFontSize_(8))
+l.do(_.levelFontSize_(18))
 l.do(_.rangeFontSize_(8))
 l.do(_.minWidth_(10))
 l.do(_.maxWidth_(25))
@@ -539,6 +539,9 @@ LevelMeter(label: "SSB", rangeLabelAlign: nil, levelLabelAlign: \bottomRight, la
 w.view.layout_(HLayout(*l));
 l[0].meterWidth_(65);
 )
+
+l = LevelMeter(label: "Car", rangeLabelAlign: \left, levelLabelAlign: \bottomRight, labelAlign: \topRight)
+l.children
 
 (
 w = Window().front;
