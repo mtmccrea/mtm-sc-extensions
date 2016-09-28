@@ -86,190 +86,250 @@ The peak color can be set independently with .peakColor_(). Setting this
 to nil restores the default behavior.
 */
 
-~numChans = 6;
+
+s.boot;
+
+
+// --------------------------------------------
+// Generic update method for Control Busses
+// update with a routine and .getSynchronous
+// Basic meter, no labels
 
 (
-~sig = { |updateFreq=12|
+~ctl !? {~ctl.free};
+~ctl = CtkControl.lfo(LFSaw, 0.3).play;
+
+w = Window().front;
+
+~meter = LevelMeter(w, Rect(w.bounds.width/2-20,0,40, w.bounds.height))
+.stepped_(true)
+.spec_(ControlSpec(-1,1))
+;
+// add color thresholds
+[-1, -0.5, 0, 0.5].do{|level, i|
+	~meter.addThreshold(level, Color.black.alpha_(1-(i/4)))
+};
+)
+
+( // task to poll bus and update meter
+t !? {t.stop};
+t = Task({
+	inf.do{
+		defer{~meter.value_(~ctl.getSynchronous)};
+		12.reciprocal.wait;
+	}
+});
+)
+
+t.play;
+// change ctl sig freq
+~ctl.freq = 2
+
+// cleanup
+t.stop
+~ctl.free;
+
+
+
+
+// --------------------------------------------
+// Meter style sampler: showcases some of the many
+// label arrangement and display options
+// Uses OSC update method for monitoring the peaks
+// and rms of a signal (similar to Level Indicator)
+
+// run this big block of code...
+
+(
+var numMeters, meterListener, meters_1;
+var steppedMeters, pkMeters, colMeters;
+
+~numChans = 6;
+
+// sound source = 6 channels
+~sig !? {~sig.free};
+~sig = { |updateFreq=10|
 	var sig, trig, rms, peak;
 
-	sig = PinkNoise.ar * SinOsc.kr(~numChans.collect{rrand(0.1, 2.5)}).range(0,1);
+	sig = WhiteNoise.ar * LFTri.kr(~numChans.collect{|i|0.2+(i*0.2)}).range(0,1);
 
 	trig = Impulse.kr(updateFreq);
-	rms = RunningSum.rms(sig);
+	rms = RunningSum.rms(sig, 0.05*SampleRate.ir);
 	peak = Peak.ar(sig, Delay1.kr(trig));
 
 	SendReply.kr(trig,
 		'/ampPkVals',
 		rms++peak
-	)
+	);
 	Out.ar(2, sig);
-}.play
-)
+}.play;
 
-(
-var numMeters, metersArr, meterListener;
-
-~numChans = 6;
-metersArr = List();
-
+// listener to get amp/peak vals and update meters
 meterListener = OSCdef(\meterRelay, { |msg|
 	var ampPkVals;
 	ampPkVals = msg[3..].clump(~numChans).lace(~numChans*2).clump(2);
 
-	metersArr.do{ |meters|
+	~metersArr.do{ |meters|
 		meters.do{ |meter, i|
+			meter !? {
 			// set the amp value, meter converts to dB
 			// with .ampdb variant setter
-			meter.ampdbValuePeak_(*ampPkVals[i])
+			defer {meter.ampdbValuePeak_(*ampPkVals[i])}
+			}
 		}
 	};
 }, '/ampPkVals'
 );
 
+// hold all these meters here
+~metersArr = List();
 
 
+// --- 1 --------------------------------------------
 // basic meters
-metersArr.add(
-	Window().front.view.layout_(HLayout(
-	*~numChans.collect({ |i|
-		LevelMeter(label: nil)
-		.spec_(ControlSpec(-100, 0))
-		}).postln
-	))
-)
 
-(
-Window().front.view.layout_(HLayout(
-	LevelMeter(label: nil, labelAlign:nil, rangeLabelAlign:nil, levelLabelAlign:nil)
-))
-)
+~metersArr.add(
+	~numChans.collect({
+		LevelMeter()
+		.fixedHeight_(80)
+	})++[nil] // adds nil to layout to compress left
+);
 
-(
-w = Window().front;
-l = 12.collect{|i| LevelMeter(label: i)};
-l.do(_.spec_(ControlSpec(-100, 0)));
-w.view.layout_(HLayout(*l));
-)
 
-(
-w = Window().front;
-l = 12.collect{|i| LevelMeter(label: i, rangeLabelAlign: nil)};
-l.do(_.spec_(ControlSpec(-100, 0)));
-w.view.layout_(HLayout(*l));
-)
 
-(
-w = Window().front;
-l = 12.collect{|i| LevelMeter(label: i, rangeLabelAlign: nil, labelAlign: \bottom)};
-l.do(_.spec_(ControlSpec(-100, 0)));
-w.view.layout_(HLayout(*l));
-)
-(
-w = Window().front;
-l = 12.collect{|i| LevelMeter(label: i, rangeLabelAlign: nil, levelLabelAlign: \bottomRight, labelAlign: \bottom)};
-l.do(_.spec_(ControlSpec(-100, 0)));
-w.view.layout_(HLayout(*l));
-)
+// --- 2 --------------------------------------------
+// basic meters - label bottom and level top
 
-(
-w = Window().front;
-l = [
-LevelMeter(label: "chan0", rangeLabelAlign: \left, levelLabelAlign: \top),
-LevelMeter(label: "chan1", rangeLabelAlign: \right, levelLabelAlign: \top),
-LevelMeter(label: "chan2", rangeLabelAlign: \left, levelLabelAlign: \bottom),
-LevelMeter(label: "chan3", rangeLabelAlign: \right, levelLabelAlign: \bottom),
-LevelMeter(label: "chan4", rangeLabelAlign: \left, levelLabelAlign: nil),
-LevelMeter(label: "chan5", rangeLabelAlign: nil, levelLabelAlign: \top),
-];
-w.view.layout_(HLayout(*l))
-)
+~metersArr.add(
+	meters_1 =~numChans.collect({ |i|
+		LevelMeter(label: i, labelAlign: \bottom, levelLabelAlign: \top)
+	})
+);
 
-(
-w = Window().front;
-l = [
-LevelMeter(label: "chan0", rangeLabelAlign: \left, levelLabelAlign: \top),
-LevelMeter(label: "chan1", rangeLabelAlign: \right, levelLabelAlign: \top),
-];
-w.view.layout_(HLayout(*l))
-)
-
-(
-l.do(_.spec_(ControlSpec(-100, 0)));
-t = Task({
-	inf.do{
-
-		l.do{|mtr|
-			var val = rrand(-100, 0.0);
-			mtr.valuePeak_(val, val*rrand(0.3, 0.6))};
-		0.1.wait;
+meters_1.do({|mtr|
+	mtr !? {
+		// setting the meter's background can help illustrate
+		// it's range. Access the .meterView (UserView) directly
+		mtr.meterView.background_(Color.gray.alpha_(0.2));
+		// change the value text color by accessing the
+		// valTxt (StaticText) directly
+		mtr.valTxt.stringColor_(Color.blue.alpha_(0.4));
 	}
-},AppClock)
-)
-t.start
-t.stop
+});
 
-l.do(_.addThreshold(-40, Color.yellow));
-l.do(_.addThreshold(-20, Color.red));
-l.do(_.setThreshold(0, -80, Color.blue));
-l.do(_.setThreshold(1, -5, Color.red));
-l.do(_.removeThreshold(0));
 
-(
-l.do{|mtr|
+// --- 3 --------------------------------------------
+// label bottom, level/peak topRight, range left
+// colorized by threshold,
+
+~metersArr.add(
+	colMeters = ~numChans.collect({ |i|
+		LevelMeter(label: i, labelAlign: \topLeft, rangeLabelAlign: \right, levelLabelAlign: \bottomLeft)
+		.showPeak_(true)
+		.levelFontSize_(10)
+		.rangeFontSize_(8)
+		.rangeFont_(protoString: "-00") // -90 is lowest value, so only need this much space
+		.defaultColor_(Color.green.alpha_(0.5))
+		.addThreshold(-26, Color.yellow.alpha_(0.5))
+		.addThreshold(-10, Color.red.alpha_(0.5))
+		.decimals_(3) // more resolution in the value display
+		.stepped_(false) // no steps in threshold, whole meter follows value
+	})
+);
+
+colMeters.do({|mtr|
+	mtr !? {
+		mtr.meterView.background_(Color.gray.alpha_(0.1));
+	}
+});
+
+
+
+// --- 4 --------------------------------------------
+// just one meter on left with range shows
+// enough for the whole row
+
+~metersArr.add(
+	steppedMeters = (~numChans-1).collect({ |i|
+		// meters without range
+		LevelMeter(label: i+1, labelAlign: \bottom, rangeLabelAlign: nil, levelLabelAlign: \top)
+	}).insert(0,
+		// add the first meter with a range
+		LevelMeter(label: 0, labelAlign: \bottom, rangeLabelAlign: \left, levelLabelAlign: \topRight)
+	).do({|meter|
+		meter
+		.showPeak_(true)
+		.levelFontSize_(10)
+		.rangeFontSize_(12).rangeFont_(protoString: "-00") // -90 is lowest value, so only need this much space
+		.levelFont_(protoString: "-00") // -90 is lowest value, so only need this much space
+		.meterWidth_(20) // make sure all meters have the same width
+		.decimals_(0) // round values to integers
+		.spec_(ControlSpec(-90, 0)) // set the spec before setting the thresholds below
+	})++[nil] // adds nil to layout to compress left
+);
+
+// more elaborate thresholding
+// set 25 thresholds, each with an algorithmically generated color
+steppedMeters.do{|mtr|
 	var numsteps=25;
 	var dbstep, colstep;
-	dbstep = mtr.spec.range/numsteps;
-	colstep= numsteps.reciprocal;
-	numsteps.do{|i|
-		mtr.addThreshold(
-			mtr.spec.minval+(dbstep*(i)),
-			// Color.hsv(1-(colstep*i/2),1,1)
-			Color.hsv(0.5-(colstep*i/2),1,1)
-		)
+	mtr !? {
+		dbstep = mtr.spec.range/numsteps;
+		colstep= numsteps.reciprocal;
+		numsteps.do{|i|
+			mtr.addThreshold(
+				mtr.spec.minval+(dbstep*(i)),
+				Color.hsv(0.5-(colstep*i/2),1,1)
+			)
+		}
 	}
-}
+};
+
+
+
+// --- 5 --------------------------------------------
+// "peak" only
+// note if using only the peak, the setter method could
+// just be .ampdbPeak_() in the responder above, setting
+// value wouldn't really be necessary because it isn't
+// displayed
+
+pkMeters = ~numChans.collect({ |i|
+	// meters without range
+	LevelMeter(label: i, labelAlign: \bottom, rangeLabelAlign: nil, levelLabelAlign: \top)
+	.showPeak_(true)
+	.showValue_(false)
+	.levelFontSize_(10)
+	.rangeFontSize_(8).rangeFont_(protoString: "-00") // -90 is lowest value, so only need this much space
+	.levelFont_(protoString: "-00.0") // -90.0 is lowest value, so only need this much space
+	.meterWidth_(20) // make sure all meters have the same width
+	.decimals_(1) // round values to integers
+	.peakLineSize_(2) // make peak line a bit thicker
+	.peakColor_(Color.black) // set peak color explicityly
+})++[nil]; // adds nil to layout to compress left
+
+pkMeters.do({ |mtr|
+	mtr !? {mtr.meterView.background_(Color.gray.alpha_(0.2))}
+});
+
+~metersArr.add(pkMeters);
+
+// set the spec for all meters
+~metersArr.do(_.do({ |me|
+	me !? {	me.spec_(ControlSpec(-90, 0)) }
+})
+);
+
+w = Window(bounds: Rect(0,0,480,Window.screenBounds.height)).front.view.layout_(
+	VLayout(
+		*~metersArr.size.collect({ |i|
+			HLayout(*~metersArr[i])
+		})
+	).spacing_(12)
+)
 )
 
-// toggle stepped display
-l.do(_.stepped_(false))
-l.do(_.stepped_(true))
+// change the spec range of all the sliders
+~metersArr.do(_.do({|mtr| mtr !? {mtr.spec_(ControlSpec(-60, 0))}}))
 
-// clear all thresholds
-l.do(_.do(_.clearThresholds))
-
-l.do{|mtr| mtr.meterView.background_(Color.gray.alpha_(0.2))}
-
-l.do(_.levelFontSize_(18))
-l.do(_.rangeFontSize_(8))
-l.do(_.minWidth_(10))
-l.do(_.maxWidth_(25))
-l.do(_.decimals_(0))
-l.do(_.levelFont_(protoString: "-00"))
-l.do(_.rangeFont_(protoString: "-00"))
-l.do({|mtr| mtr.minWidth_(65)})
-l.do({|mtr| mtr.minWidth_(85)})
-l.do({|mtr| mtr.maxWidth_(15)})
-w.view.layout.add(nil)
-
-
-(
-w = Window().front;
-l = [
-LevelMeter(label: "Car", rangeLabelAlign: \left, levelLabelAlign: \bottomRight, labelAlign: \topRight),
-LevelMeter(label: "SSB", rangeLabelAlign: nil, levelLabelAlign: \bottomRight, labelAlign: \topRight).fixedWidth_(65),
-];
-w.view.layout_(HLayout(*l));
-l[0].meterWidth_(65);
-)
-
-l = LevelMeter(label: "Car", rangeLabelAlign: \left, levelLabelAlign: \bottomRight, labelAlign: \topRight)
-l.children
-
-(
-w = Window().front;
-l = [
-LevelMeter(label: "chan0", rangeLabelAlign: \left, levelLabelAlign: \topRight, labelAlign: \topRight),
-LevelMeter(label: "chan1", rangeLabelAlign: \right, levelLabelAlign: \topLeft, labelAlign: \topLeft)
-];
-w.view.layout_(HLayout(*l.do(_.meterWidth_(40))));
-)
+s.quit;

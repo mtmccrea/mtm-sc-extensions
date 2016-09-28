@@ -13,6 +13,7 @@
 // Add mode for peak or value only, both in meter and level label
 // Only create widgets if they're visible, i.e. if initialized to nil,
 //      don't create (or update) them
+// Touch up padding on value display to center around a decimal
 
 LevelMeter : View {
 	var orientation, rangeLabelAlign, levelLabelAlign;
@@ -20,7 +21,7 @@ LevelMeter : View {
 	var <showValue = true, <showPeak = false;
 	var <meterView, <valTxt, <pkTxt, <minTxt, <maxTxt;
 	var masterLayout, valTxtView;
-	var <>pkLineSize = 4;
+	var <>peakLineSize = 4;
 
 	var label, labelTxt, labelFont, labelAlign;
 	var protoRangeVal, rangeFont;
@@ -85,7 +86,6 @@ LevelMeter : View {
 			meterView
 		).margins_(0).spacing_(2);
 
-		rangeLabelAlign.postln;
 		rangeLabelAlign !? {
 			switch (rangeLabelAlign,
 				\left, {
@@ -252,7 +252,7 @@ LevelMeter : View {
 				if (showPeak) { // draw peak
 					Pen.fillColor_(peakColor ?? {this.getColorByVal(peakValueNorm)});
 					Pen.fillRect(
-						Size(bnds.width, pkLineSize).asRect.top_(bnds.height*(1-peakValueNorm));
+						Size(bnds.width, peakLineSize).asRect.top_(bnds.height*(1-peakValueNorm));
 					);
 				};
 			} { // no thresholds specified, just draw default color
@@ -263,9 +263,9 @@ LevelMeter : View {
 					);
 				};
 				if (showPeak) { // draw peak
-					peakColor !? Pen.fillColor_(peakColor);
+					peakColor !? {Pen.fillColor_(peakColor)};
 					Pen.fillRect(
-						Size(bnds.width, pkLineSize).asRect.top_(bnds.height*(1-peakValueNorm));
+						Size(bnds.width, peakLineSize).asRect.top_(bnds.height*(1-peakValueNorm));
 					);
 				};
 			};
@@ -316,6 +316,7 @@ LevelMeter : View {
 		roundTo = if (num > 0)
 		{("0."++"".padRight(num-1,"0")++"1").asFloat}
 		{1}
+		// TODO: update levelFont's protoString and apply it
 	}
 
 	spec_ { |controlSpec|
@@ -438,7 +439,7 @@ LevelMeter : View {
 
 	showPeak_ { |bool|
 		showPeak = bool;
-		rangeLabelAlign !? {
+		levelLabelAlign !? {
 			pkTxt.visible_(showPeak)
 		};
 	}
