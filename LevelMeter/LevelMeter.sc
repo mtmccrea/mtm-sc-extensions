@@ -11,13 +11,16 @@
 // LED mode: with LED size specification
 // Add help file with examples
 // Add mode for peak or value only, both in meter and level label
+// Only create widgets if they're visible, i.e. if initialized to nil,
+//      don't create (or update) them
 
 LevelMeter : View {
 	var orientation, rangeLabelAlign, levelLabelAlign;
 	var <>stepped = true;
-	var <meterView, <masterLayout, valTxtView;
-	var valTxt, pkTxt, minTxt, maxTxt;
-	var >pkLineSize = 4;
+	var <showValue = true, <showPeak = false;
+	var <meterView, <valTxt, <pkTxt, <minTxt, <maxTxt;
+	var masterLayout, valTxtView;
+	var <>pkLineSize = 4;
 
 	var label, labelTxt, labelFont, labelAlign;
 	var protoRangeVal, rangeFont;
@@ -28,24 +31,24 @@ LevelMeter : View {
 	var <>valueNorm=1, <>peakValueNorm = 1;
 	var <spec, roundTo=0.1;
 	var <thresholds, <thresholdsNorm, <thresholdColors;
-	var <>defaultColor;
+	var <>defaultColor, <peakColor;
 
 	*new {
 		arg
-		parent, bounds, orientation = \vert, label, labelAlign = \top,
-		rangeLabelAlign = \left, levelLabelAlign = \top;
+		parent, bounds, label, labelAlign, rangeLabelAlign, levelLabelAlign; //orientation = \vert;
+		// parent, bounds, label, labelAlign=\top, rangeLabelAlign=\left, levelLabelAlign=\top; //orientation = \vert;
 
-		^super.new(parent, bounds).init(orientation, label, labelAlign, rangeLabelAlign, levelLabelAlign)
+		^super.new(parent, bounds).init(label, labelAlign, rangeLabelAlign, levelLabelAlign) //orientation,
 	}
 
-	init { |i_orient, i_label, i_labelAlign, i_rangeLabelAlign, i_levelLabelAlign|
+	init { |i_label, i_labelAlign, i_rangeLabelAlign, i_levelLabelAlign| //i_orient,
 		var txtSize;
 		// "copyArgs"
-		orientation = i_orient;
-		label = i_label.asString;
+		label = i_label !? {i_label.asString};
 		labelAlign = i_labelAlign;
 		rangeLabelAlign = i_rangeLabelAlign;
 		levelLabelAlign = i_levelLabelAlign;
+		// orientation = i_orient;
 
 		spec = ControlSpec();
 
@@ -67,7 +70,7 @@ LevelMeter : View {
 		this.rangeFont_(Font.default, "-000");
 
 		this.makeMeterView;
-		this.assebleElements;
+		this.assebleElements; // sets masterLayout
 
 		this.layout_(masterLayout);
 	}
@@ -82,8 +85,9 @@ LevelMeter : View {
 			meterView
 		).margins_(0).spacing_(2);
 
+		rangeLabelAlign.postln;
 		rangeLabelAlign !? {
-			switch(rangeLabelAlign,
+			switch (rangeLabelAlign,
 				\left, {
 					[maxTxt, minTxt].do(_.align_(\right));
 					rangeTxtLayout = VLayout(
@@ -109,6 +113,10 @@ LevelMeter : View {
 
 		levelLabelAlign !? {
 			var align, levelLayout;
+
+			valTxt.visible_(showValue);
+			pkTxt.visible_(showPeak);
+
 			levelLayout = VLayout().margins_(0);
 			levelView = View().layout_(levelLayout);
 
@@ -132,7 +140,7 @@ LevelMeter : View {
 		};
 
 		labelTxt !? {
-			switch (labelAlign,
+			switch (labelAlign ?? \top,
 				\bottomLeft, {masterLayout.add(labelTxt, align: \left)},
 				\bottom, {masterLayout.add(labelTxt, align: \center)},
 				\bottomRight, {masterLayout.add(labelTxt, align: \right)},
@@ -234,30 +242,33 @@ LevelMeter : View {
 			var bnds;
 			bnds = uv.bounds;
 			if(thresholds.size > 0) {
-				// draw level
-				if (stepped) {
-					this.drawSteppedMeter(bnds);
-				} {
-					this.drawSolidMeter(bnds);
+				if (showValue) { // draw level
+					if (stepped) {
+						this.drawSteppedMeter(bnds);
+					} {
+						this.drawSolidMeter(bnds);
+					};
 				};
-
-				// draw peak
-				Pen.fillColor_(this.getColorByVal(peakValueNorm));
-				Pen.fillRect(
-					Size(bnds.width, pkLineSize).asRect.top_(bnds.height*(1-peakValueNorm));
-				);
-			} {
-				// no thresholds specified, just draw default color
+				if (showPeak) { // draw peak
+					Pen.fillColor_(peakColor ?? {this.getColorByVal(peakValueNorm)});
+					Pen.fillRect(
+						Size(bnds.width, pkLineSize).asRect.top_(bnds.height*(1-peakValueNorm));
+					);
+				};
+			} { // no thresholds specified, just draw default color
 				Pen.fillColor_(defaultColor);
-				// draw level
-				Pen.fillRect(
-					Size(bnds.width, bnds.height*valueNorm).asRect.bottom_(bnds.height);
-				);
-				// draw peak
-				Pen.fillRect(
-					Size(bnds.width, pkLineSize).asRect.top_(bnds.height*(1-peakValueNorm));
-				);
-			}
+				if (showValue) { // draw level
+					Pen.fillRect(
+						Size(bnds.width, bnds.height*valueNorm).asRect.bottom_(bnds.height);
+					);
+				};
+				if (showPeak) { // draw peak
+					peakColor !? Pen.fillColor_(peakColor);
+					Pen.fillRect(
+						Size(bnds.width, pkLineSize).asRect.top_(bnds.height*(1-peakValueNorm));
+					);
+				};
+			};
 		});
 	}
 
@@ -342,6 +353,11 @@ LevelMeter : View {
 		this.levelFont_(levelFont)
 	}
 
+	labelFontSize_ { |num|
+		labelFont.size_(num);
+		this.labelFont_(labelFont)
+	}
+
 	labelFont_ { |font|
 		var txtSize;
 		if (label.notNil and: font.notNil) {
@@ -418,6 +434,23 @@ LevelMeter : View {
 
 	clearThresholds {
 		[thresholds, thresholdsNorm, thresholdColors].do(_.clear);
+	}
+
+	showPeak_ { |bool|
+		showPeak = bool;
+		rangeLabelAlign !? {
+			pkTxt.visible_(showPeak)
+		};
+	}
+
+	showValue_ { |bool|
+		showValue = bool;
+		valTxt.visible_(showValue);
+	}
+
+	// nil disables custom peak color
+	peakColor_ { |aColor|
+		peakColor = aColor;
 	}
 }
 
