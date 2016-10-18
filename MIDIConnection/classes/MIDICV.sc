@@ -262,26 +262,25 @@ MIDICV : NumericCV {
 		if (ccNum.isNil) {
 			this.cc(newCcNum)
 		} {
-			var chan, srcID, argTemplate, dispatcher, prevDefType, func, key;
+			var chan, srcID, argTemplate, dispatcher, func, key;
 
-			if( (prevDefType == \control ).not)
+			if( (midiDef.msgType == \control ).not)
 			{"Updating cc number on the fly is currently only supported with \control values, not noteOn/Off (button-style) values.\nIf creating a toggle CV, free and re-create a MIDICV to change cc number".throw};
 
 			// remove the MIDIdef currently owned by this instance
 			MIDICV.midiCvDict.removeAt(ccNum);
 			ccNum = newCcNum; // update var to new ccNum
 
-			chan = midiChan; //midiDef.chan;
-			srcID = midiDef.srcID;
-			argTemplate = midiDef.argTemplate;
-			dispatcher = midiDef.dispatcher;
-			prevDefType = midiDef.msgType;
-			func = midiDef.key;
-			key = midiDef.func;
+			chan = midiChan.postln; //midiDef.chan;
+			srcID = midiDef.srcID.postln;
+			argTemplate = midiDef.argTemplate.postln;
+			dispatcher = midiDef.dispatcher.postln;
+			func = midiDef.func.postln;
+			key = midiDef.key.postln;
 
 			midiDef.free;
 			// create a midiDef to replace it
-
+			"creating new one".postln;
 			midiDef = MIDIdef.cc(ccNum.asSymbol, func, ccNum, chan, srcID, argTemplate, dispatcher);
 			// move this instance to the new ccNum slot in the global dict
 			MIDICV.midiCvDict.put(ccNum, this);

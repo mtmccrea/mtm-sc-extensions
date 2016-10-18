@@ -16,8 +16,8 @@ d = CtkSynthDef(\noiTest, {|outbus=0, amp=0, pan=0, scaleAmp=0.5, midiLag=0.1|
 )
 
 // create 2 notes
-~noi1 = d.note.outbus_(0).pan_(-1).play;
-~noi2 = d.note.outbus_(0).pan_(1).play;
+~noi1 = d.note.outbus_(2).pan_(-1).play;
+~noi2 = d.note.outbus_(2).pan_(1).play;
 
 // create a MIDI Control Value for each note's amp
 ~midiVol1 = MIDICV(0, \unipolar.asSpec).cc(1);
@@ -55,7 +55,7 @@ f = {|val| val.ampdb.postln};	// post the amp values in dB
 
 // you can also remap MIDICVs to a different fader than originally assigned
 // e.g. move the second note's volume control to the master fader (ccNum 9)
-~midiVol1.newCC_(1) // move the master fader...and fader 2
+~midiVol2.newCC_(9) // move the master fader...and fader 2
 
 // enable/disable, but retain connections
 ~midiVol1.disable
@@ -104,7 +104,7 @@ e = {|val| postf("Toggled! %\n", val)};
 //    and fires "on" on push only, and "off" on release only
 
 // turn it off later if you want
-~midiBut.stopEchoToggle; // toggle state no longer echoed to controller
+~midiBut.stopMirrorHWToggle; // toggle state no longer echoed to controller
 
 ~midiBut.free // this will clean up the internal toggle CV as well
 
