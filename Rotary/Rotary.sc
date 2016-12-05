@@ -9,12 +9,15 @@ Rotary : View {
 
 	// movement
 	var <direction, <startAngle, <sweepLength, <orientation;
+	var valuePerPixel, valuePerRadian;
 	//range
 	var rangeFillColor, rangeStrokeColor, rangeStrokeType, rangeStrokeWidth;
 	// level
 	var levelFillColor, levelStrokeColor;
 	// handle
 	var showHandle, handleStrokeColor, handleStrokeWidth, handleFillColor, handleWidth;
+
+
 
 	// ticks
 	var majorTickLen, minorTickLen;
@@ -26,7 +29,10 @@ Rotary : View {
 	var prSweepLength; // sweep length used internally, = sweepLength * dirFlag
 	var moveRelative = true;  // false means value jumps to click, TODO: disabled for infinite movement
 
+	// private
 	var rViewCen;
+	var stValue;
+	var mDownPnt;
 
 	*new { arg parent, bounds, label, labelAlign, rangeLabelAlign, levelLabelAlign;
 		^super.new(parent, bounds).init(label, labelAlign, rangeLabelAlign, levelLabelAlign)
@@ -41,6 +47,9 @@ Rotary : View {
 		startAngle = 0; // reference 0 is UP
 		sweepLength = 2pi;
 		orientation = \vertical;
+
+		valuePerPixel = spec.range / 300;
+		valuePerRadian = spec.range / sweepLength;
 
 		// range
 		rangeFillColor = Color.gray;
@@ -86,22 +95,27 @@ Rotary : View {
 			Pen.fillColor_(rangeFillColor);
 			Pen.addAnnularWedge(cen, 5, cen.x, prStartAngle, prSweepLength);
 			Pen.fill;
+
+			Pen.fillColor_(levelFillColor);
+			Pen.addAnnularWedge(cen, 5, cen.x, prStartAngle, prSweepLength*value);
+			Pen.fill;
+
 		})
 	}
 
 	// INTERACT
 	defineInteraction {
-		var mDownPnt;
 
 		rView.mouseDownAction_({|view, x, y|
 			mDownPnt = x@y; // set for moveAction
+			stValue = value;
 		});
 
 		rView.mouseMoveAction_({|view, x, y|
 			switch (orientation,
 				\vertical, {this.respondToLinearMove(mDownPnt.y-y)},
 				\horizontal, {this.respondToLinearMove(x-mDownPnt.x)},
-				\circular, {this.respondToCircularMove(mDownPnt, x@y)}
+				\circular, {this.respondToCircularMove(x@y)}
 			);
 
 		});
@@ -110,12 +124,14 @@ Rotary : View {
 	respondToLinearMove { |dPx|
 		postf("move % pixels\n", dPx);
 		if (dPx !=0) {
-
+			this.value = stValue + (dPx * valuePerPixel);
 		};
+
+		this.refresh;
 	}
 
 	// radial change, relative to center
-	respondToCircularMove { |mDownPnt, mMovePnt|
+	respondToCircularMove { |mMovePnt|
 		var stPos, endPos, stRad, endRad, dRad;
 
 		stPos = (mDownPnt - rViewCen);
@@ -126,13 +142,26 @@ Rotary : View {
 		endRad = atan2(endPos.y, endPos.x);
 		postf("moveAngle: %\n", endRad);
 
-		dRad = endRad - stRad * dirFlag;
+		// dRad = endRad - stRad * dirFlag ;
+
+		// stRad.isNegative.if({
+		// 	dRad = endRad.abs.neg - stRad * dirFlag ;
+		// 	},{
+		// 		dRad = endRad.abs - stRad * dirFlag ;
+		// });
+
+
+		dRad = (endRad - stRad).fold(0, pi) * dirFlag * (endRad - stRad).sign;
 
 		postf("move % degrees\n", dRad.raddeg);
 
 		if (dRad !=0) {
-
+			this.value = stValue + (dRad * valuePerRadian); // causes refresh
 		};
+
+		// allow continuous updating of relative start point
+		mDownPnt = mMovePnt;
+		stValue = value;
 	}
 
 	refresh {
@@ -141,7 +170,7 @@ Rotary : View {
 
 
 	value_ { |val|
-
+		value = spec.constrain(val);
 		this.refresh;
 	}
 
@@ -168,6 +197,7 @@ Rotary : View {
 	sweepLength_ { |radians=2pi|
 		sweepLength = radians;
 		prSweepLength = sweepLength * dirFlag;
+		valuePerRadian = spec.range / sweepLength;
 		this.refresh;
 	}
 
@@ -184,13 +214,15 @@ Rotary : View {
 
 /*
 r = Rotary(bounds: Size(300,300).asRect).front
-r.startAngle_(0.1pi)
+r.startAngle_(-0.75pi)
 r.startAngle_(0)
-r.direction = \ccw
+r.direction = \cw
 r.sweepLength = 1.5pi
 r.startAngle_(-0.1pi)
 r.direction
 r.orientation = \circular
 r.orientation = \vertical
 r.orientation = \horizontal
+
+r.value=0
 */
