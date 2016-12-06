@@ -19,11 +19,11 @@ Rotary : View {
 	var valuePerPixel, valuePerRadian;
 	var clickMode;
 	//range
-	var rangeFillColor, rangeStrokeColor, rangeStrokeType, rangeStrokeWidth;
+	var rangeFillColor, rangeStrokeColor, rangeStroke, rangeStrokeWidth;
 	// level
 	var levelFillColor, levelStrokeColor;
 	// handle
-	var showHandle, handleStrokeColor, handleStrokeWidth, handleFillColor, handleWidth;
+	var showHandle, handleColor, handleWidth;
 
 
 
@@ -33,7 +33,7 @@ Rotary : View {
 	tickStrokeColor, majorTickWidth, minorTickWidth;
 
 	var <rView; // the rotary view
-	var <value;
+	var <value, <normValue;
 	var dirFlag; // changes with direction: cw=1, ccw=-1
 	var prStartAngle; // start angle used internally, reference 0 to the RIGHT, as used in addAnnularWedge
 	var prSweepLength; // sweep length used internally, = sweepLength * dirFlag
@@ -50,8 +50,10 @@ Rotary : View {
 
 	init { |argInnerRadiusRatio, label, labelAlign, rangeLabelAlign, levelLabelAlign|
 
-		value = 0; // TODO: default to spec.default
 		spec = \unipolar.asSpec;
+		value = 0; // TODO: default to spec.default
+		normValue = spec.unmap(value);
+
 
 		// radius = argRadius ?? {this.bounds.width*0.5};
 		innerRadiusRatio = argInnerRadiusRatio ?? {0};
@@ -68,8 +70,8 @@ Rotary : View {
 
 		// range
 		rangeFillColor = Color.gray;
+		rangeStroke = \around;		// \inside, \outside, \around
 		rangeStrokeColor = Color.black;
-		rangeStrokeType = \around;		// \inside, \outside, \around
 		rangeStrokeWidth = 2;
 
 		// level
@@ -78,9 +80,9 @@ Rotary : View {
 
 		// handle
 		showHandle = true;
-		handleStrokeColor = Color.blue; // nil disables stroke
-		handleStrokeWidth = 2;
-		handleFillColor = Color.yellow;
+		handleColor = Color.red; // nil disables stroke
+		handleWidth = 2;
+		// handleFillColor = Color.yellow;
 		handleWidth = 3;
 
 		// ticks
@@ -89,9 +91,9 @@ Rotary : View {
 		minTicks = [];
 		majTickVals = [];
 		minTickVals = [];
-		majorTickRatio = 0.5;
-		minorTickRatio = 0.25;
-		tickAnchor = \outer;
+		majorTickRatio = 0.25;
+		minorTickRatio = 0.15;
+		tickAnchor = \outside;
 		majorTickWidth = 2;
 		minorTickWidth = 1;
 		tickStrokeColor = nil; // default to rangeStrokeColor
@@ -112,7 +114,7 @@ Rotary : View {
 	defineDrawFunc {
 		var bnds, cen, radius;
 		var wedgeWidth, innerRad;
-		var drRange, drLevel, drTicks, drRangeStroke, drHandle, drValueTxt, drawLocalTicks;
+		var drRange, drLevel, drTicks, drRangeStroke, drHandle, drValueTxt, drLocalTicks;
 
 		rView.drawFunc_({ |v|
 			bnds = v.bounds;
@@ -126,21 +128,21 @@ Rotary : View {
 			drRange.();
 			drLevel.();
 			if (showTicks) {drTicks.()};
+			if (showHandle) {drHandle.()};
 			drRangeStroke.();
-			drHandle.();
 			drValueTxt.();
 
 		});
 
 		drRange = {
 			Pen.fillColor_(rangeFillColor);
-			Pen.addAnnularWedge(cen, innerRad, cen.x, prStartAngle, prSweepLength);
+			Pen.addAnnularWedge(cen, innerRad, radius, prStartAngle, prSweepLength);
 			Pen.fill;
 		};
 
 		drLevel = {
 			Pen.fillColor_(levelFillColor);
-			Pen.addAnnularWedge(cen, innerRad, cen.x, prStartAngle, prSweepLength*value);
+			Pen.addAnnularWedge(cen, innerRad, radius, prStartAngle, prSweepLength*normValue);
 			Pen.fill;
 		};
 
@@ -148,22 +150,22 @@ Rotary : View {
 			Pen.push;
 			Pen.translate(cen.x, cen.y);
 			Pen.rotate(prStartAngle);
-			drawLocalTicks.(majTicks, majorTickRatio, majorTickWidth);
-			drawLocalTicks.(minTicks, minorTickRatio, minorTickWidth);
+			drLocalTicks.(majTicks, majorTickRatio, majorTickWidth);
+			drLocalTicks.(minTicks, minorTickRatio, minorTickWidth);
 			Pen.pop;
 		};
 
-		drawLocalTicks = { |ticks, tickRatio, strokeWidth|
+		drLocalTicks = { |ticks, tickRatio, strokeWidth|
 			var penSt, penEnd;
 			penSt = switch (tickAnchor,
-				\inner, {innerRad},
-				\outer, {radius},
+				\inside, {innerRad},
+				\outside, {radius},
 				{innerRad + (wedgeWidth - (wedgeWidth * tickRatio) * 0.5)} // \center
 			);
 
-			penEnd = if (tickAnchor == \outer) {
+			penEnd = if (tickAnchor == \outside) {
 				penSt - (wedgeWidth * tickRatio)
-			} { // \inner or \center
+			} { // \inside or \center
 				penSt + (wedgeWidth * tickRatio)
 			};
 
@@ -178,8 +180,42 @@ Rotary : View {
 			};
 		};
 
-		drRangeStroke = {};
-		drHandle = {};
+		drHandle = {
+			Pen.push;
+			Pen.translate(cen.x, cen.y);
+			Pen.width_(handleWidth);
+			Pen.strokeColor_(handleColor);
+			Pen.moveTo(innerRad@0);
+			Pen.lineTo(radius@0);
+			Pen.rotate(prStartAngle+(prSweepLength*normValue));
+			Pen.stroke;
+			Pen.pop;
+		};
+
+		drRangeStroke = {
+			var rad, inset;
+			Pen.strokeColor_(rangeStrokeColor);
+			Pen.width_(rangeStrokeWidth);
+			inset = rangeStrokeWidth*0.5;
+			switch (rangeStroke,
+				\around, {
+					Pen.addAnnularWedge(cen, innerRad, radius-inset, prStartAngle, prSweepLength);
+				},
+				\inside, {
+					Pen.addArc(cen, innerRad+inset, prStartAngle, prSweepLength);
+				},
+				\outside, {
+					Pen.addArc(cen, radius-inset, prStartAngle, prSweepLength);
+				},
+				\insideOutside, {
+					Pen.addArc(cen, innerRad+inset, prStartAngle, prSweepLength);
+					Pen.addArc(cen, radius-inset, prStartAngle, prSweepLength);
+				},
+			);
+			Pen.stroke;
+		};
+
+
 		drValueTxt = {};
 	}
 
@@ -248,6 +284,7 @@ Rotary : View {
 
 	value_ { |val|
 		value = spec.constrain(val);
+		normValue = spec.unmap(value);
 		this.refresh;
 	}
 
@@ -280,11 +317,11 @@ Rotary : View {
 		// this.refresh;
 	}
 
-	majorTickRatio_ { |ratio = 0.5|
+	majorTickRatio_ { |ratio = 0.25|
 		majorTickRatio = ratio;
 		this.refresh;
 	}
-	minorTickRatio_ { |ratio = 0.25|
+	minorTickRatio_ { |ratio = 0.15|
 		minorTickRatio = ratio;
 		this.refresh;
 	}
@@ -298,7 +335,7 @@ Rotary : View {
 		this.refresh;
 	}
 
-	// \inner, \outer, \center
+	// \inside, \outside, \center
 	tickAnchor_ { |anchor|
 		tickAnchor = anchor;
 		this.refresh;
@@ -345,14 +382,53 @@ Rotary : View {
 		ticks.do{|val, i| if ((i%majorEvery) == 0) {majList.add(val)} {minList.add(val)} };
 		this.ticksAt_(majList, minList);
 	}
+
+	rangeFillColor_ {|color|
+		rangeFillColor = color;
+		this.refresh;
+	}
+
+	// \inside, \outside, \around
+	rangeStroke_ { |insideOutsideAround|
+		rangeStroke = insideOutsideAround;
+		this.refresh;
+	}
+
+	rangeStrokeColor_ {|color|
+		rangeStrokeColor = color;
+		this.refresh;
+	}
+
+	rangeStrokeWidth_ { |px|
+		rangeStrokeWidth = px;
+		this.refresh;
+	}
+
+	showHandle_ { |bool|
+		showHandle = bool;
+		this.refresh;
+	}
+
+	handleColor_ { |color|
+		handleColor = color;
+		this.refresh;
+	}
+
+	handleWidth_ { |px|
+		handleWidth = px;
+		this.refresh;
+	}
+
 }
 
 /*
 r = Rotary(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.1).front
 r.startAngle_(-0.75pi)
+r.sweepLength = 1.5pi
+
 r.startAngle_(0)
 r.direction = \ccw
-r.sweepLength = 1.5pi
+
 r.startAngle_(-0.1pi)
 r.direction
 r.orientation = \circular
