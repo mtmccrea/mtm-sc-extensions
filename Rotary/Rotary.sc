@@ -5,11 +5,15 @@
 // fix continuous circular motion
 // make this function like a real view
 // consider ticks with annularWedge instead of lines
+// consolidate variables and method: value vs. level controls, a higher level property mechanism?
+// ctl to un/link level from handle: handle is value, level is set independently (still share the same spec?)
+// --> handle could be "peak" so functions like a peak/value meter
+// height/width adjusts with min(view.height, view.width)
 
 
 Rotary : View {
 
-	var spec;
+	var <spec;
 
 	// dimensions
 	var innerRadiusRatio; // radius,
@@ -19,13 +23,14 @@ Rotary : View {
 	var valuePerPixel, valuePerRadian;
 	var clickMode;
 	//range
-	var rangeFillColor, rangeStrokeColor, rangeStroke, rangeStrokeWidth;
+	var fillRange, strokeRange, rangeFillColor, rangeStrokeColor, rangeStroke, rangeStrokeWidth;
 	// level
-	var levelFillColor, levelStrokeColor;
+	var showLevel, levelFillColor, levelStrokeColor, strokeLevel, levelStroke, fillLevel, levelStrokeWidth;
+
 	// handle
 	var showHandle, handleColor, handleWidth;
-
-
+	// value txt
+	var showValue, valuePosition, valueFontSize, valueFont, valueFontColor, round;
 
 	// ticks
 	var showTicks, tickAnchor, majorTickRatio, minorTickRatio,
@@ -48,7 +53,7 @@ Rotary : View {
 		^super.new(parent, bounds).init(innerRadiusRatio, label, labelAlign, rangeLabelAlign, levelLabelAlign)
 	}
 
-	init { |argInnerRadiusRatio, label, labelAlign, rangeLabelAlign, levelLabelAlign|
+	init {|argInnerRadiusRatio, label, labelAlign, rangeLabelAlign, levelLabelAlign|
 
 		spec = \unipolar.asSpec;
 		value = 0; // TODO: default to spec.default
@@ -69,21 +74,34 @@ Rotary : View {
 		valuePerRadian = spec.range / sweepLength;
 
 		// range
+		fillRange = true;
+		strokeRange = true;
 		rangeFillColor = Color.gray;
 		rangeStroke = \around;		// \inside, \outside, \around
 		rangeStrokeColor = Color.black;
-		rangeStrokeWidth = 2;
+		rangeStrokeWidth = 1;
 
 		// level
-		levelFillColor = Color.white;
+		showLevel = true;
+		strokeLevel = true;
+		levelStroke = \around;
 		levelStrokeColor = Color.green;
+		levelStrokeWidth = 2;
+		fillLevel = true;
+		levelFillColor = Color.white;
+
+		// value
+		showValue = true;
+		valuePosition = \center; // \top, \bottom, \center, \left, \right, or Point()
+		valueFontSize = 12;
+		valueFont = Font("Helvetica", valueFontSize);
+		valueFontColor = Color.black;
+		round = 0.1;
 
 		// handle
 		showHandle = true;
 		handleColor = Color.red; // nil disables stroke
 		handleWidth = 2;
-		// handleFillColor = Color.yellow;
-		handleWidth = 3;
 
 		// ticks
 		showTicks = false;
@@ -94,8 +112,8 @@ Rotary : View {
 		majorTickRatio = 0.25;
 		minorTickRatio = 0.15;
 		tickAnchor = \outside;
-		majorTickWidth = 2;
-		minorTickWidth = 1;
+		majorTickWidth = 1;
+		minorTickWidth = 0.5;
 		tickStrokeColor = nil; // default to rangeStrokeColor
 
 		view = View(this, this.bounds.extent.asRect).resize_(5);
@@ -116,7 +134,7 @@ Rotary : View {
 		var wedgeWidth, innerRad;
 		var drRange, drLevel, drTicks, drRangeStroke, drHandle, drValueTxt, drLocalTicks;
 
-		rView.drawFunc_({ |v|
+		rView.drawFunc_({|v|
 			bnds = v.bounds;
 			cen  = bnds.center;
 			rViewCen = cen;
@@ -125,12 +143,16 @@ Rotary : View {
 			innerRad = radius*innerRadiusRatio;
 			wedgeWidth = radius - innerRad;
 
-			drRange.();
-			drLevel.();
+			// order of drawing here is important for proper layering
+			if (fillRange) {drRange.()};
+			if (showLevel and: fillLevel) {drLevel.(\fill)};
 			if (showTicks) {drTicks.()};
+			if (strokeRange) {drRangeStroke.()};
+			"here".postln;
+			[showLevel, strokeLevel].postln;
+			if (showLevel and: strokeLevel) {drLevel.(\stroke)};
 			if (showHandle) {drHandle.()};
-			drRangeStroke.();
-			drValueTxt.();
+			if (showValue) {drValueTxt.()};
 
 		});
 
@@ -140,10 +162,39 @@ Rotary : View {
 			Pen.fill;
 		};
 
-		drLevel = {
-			Pen.fillColor_(levelFillColor);
-			Pen.addAnnularWedge(cen, innerRad, radius, prStartAngle, prSweepLength*normValue);
-			Pen.fill;
+		drLevel = { |fillOrStroke|
+			var swLen, inset;
+			swLen = prSweepLength*normValue;
+			switch (fillOrStroke,
+				\fill, {
+					Pen.fillColor_(levelFillColor);
+					Pen.addAnnularWedge(cen, innerRad, radius, prStartAngle, swLen);
+					Pen.fill;
+				},
+				\stroke, {
+					"instroke".postln;
+					levelStroke.postln;
+					Pen.strokeColor_(levelStrokeColor);
+					Pen.width_(levelStrokeWidth);
+					inset = levelStrokeWidth*0.5;
+					switch (levelStroke,
+						\around, {
+							Pen.addAnnularWedge(cen, innerRad, radius-inset, prStartAngle, swLen);
+						},
+						\inside, {
+							Pen.addArc(cen, innerRad+inset, prStartAngle, swLen);
+						},
+						\outside, {
+							Pen.addArc(cen, radius-inset, prStartAngle, swLen);
+						},
+						\insideOutside, {
+							Pen.addArc(cen, innerRad+inset, prStartAngle, swLen);
+							Pen.addArc(cen, radius-inset, prStartAngle, swLen);
+						},
+					);
+					Pen.stroke;
+				}
+			)
 		};
 
 		drTicks = {
@@ -155,7 +206,7 @@ Rotary : View {
 			Pen.pop;
 		};
 
-		drLocalTicks = { |ticks, tickRatio, strokeWidth|
+		drLocalTicks = {|ticks, tickRatio, strokeWidth|
 			var penSt, penEnd;
 			penSt = switch (tickAnchor,
 				\inside, {innerRad},
@@ -169,7 +220,7 @@ Rotary : View {
 				penSt + (wedgeWidth * tickRatio)
 			};
 
-			ticks.do{ |tickRad|
+			ticks.do{|tickRad|
 				Pen.width_(strokeWidth);
 				Pen.moveTo(penSt@0);
 				Pen.push;
@@ -193,7 +244,7 @@ Rotary : View {
 		};
 
 		drRangeStroke = {
-			var rad, inset;
+			var inset;
 			Pen.strokeColor_(rangeStrokeColor);
 			Pen.width_(rangeStrokeWidth);
 			inset = rangeStrokeWidth*0.5;
@@ -216,7 +267,31 @@ Rotary : View {
 		};
 
 
-		drValueTxt = {};
+		drValueTxt = {
+			var v, r, half;
+			v = value.round(round).asString;
+			Pen.fillColor_(valueFontColor);
+			if (valuePosition.isKindOf(Point)) {
+				r = bnds.center_(bnds.extent*valuePosition);
+				Pen.stringCenteredIn(v, r, valueFont, valueFontColor);
+			} {
+				r = switch (valuePosition,
+					\center, {bnds},
+					\left, {bnds.width_(bnds.width*0.5)},
+					\right, {
+						half = bnds.width*0.5;
+						bnds.width_(half).left_(half);
+					},
+					\top, {bnds.height_(bnds.height*0.5)},
+					\bottom, {
+						half = bnds.height*0.5;
+						bnds.height_(half).top_(half)
+					},
+				);
+				Pen.stringCenteredIn(v, r, valueFont, valueFontColor)
+			};
+			Pen.fill;
+		}
 	}
 
 	// INTERACT
@@ -236,7 +311,7 @@ Rotary : View {
 		});
 	}
 
-	respondToLinearMove { |dPx|
+	respondToLinearMove {|dPx|
 		postf("move % pixels\n", dPx);
 		if (dPx !=0) {
 			this.value = stValue + (dPx * valuePerPixel);
@@ -246,7 +321,7 @@ Rotary : View {
 	}
 
 	// radial change, relative to center
-	respondToCircularMove { |mMovePnt|
+	respondToCircularMove {|mMovePnt|
 		var stPos, endPos, stRad, endRad, dRad;
 
 		stPos = (mDownPnt - rViewCen);
@@ -282,19 +357,29 @@ Rotary : View {
 	}
 
 
-	value_ { |val|
+	value_ {|val|
+		postf("pre val/norm: %\n", [value, normValue]);
 		value = spec.constrain(val);
 		normValue = spec.unmap(value);
+		postf("post val/norm: %\n\n", [value, normValue]);
 		this.refresh;
 	}
 
-	label_ { |string, align=\top|
+	label_ {|string, align=\top|
 	}
 
-	spec_ { |controlSpec|
+	spec_ {|controlSpec|
+		var rangeInPx;
+		rangeInPx = spec.range/valuePerPixel; // get old pixels per range
+		spec = controlSpec;
+		this.rangeInPixels_(rangeInPx); // restore mouse scaling so it feels the same
+		this.value_(value); // updates normValue
+		// TODO: update ticks
 	}
 
-	direction_ { |dir=\cw|
+	/* Orientation and Movement */
+
+	direction_ {|dir=\cw|
 		direction = dir;
 		dirFlag = switch (direction, \cw, {1}, \ccw, {-1});
 		this.startAngle_(startAngle);
@@ -302,14 +387,14 @@ Rotary : View {
 		this.refresh;
 	}
 
-	startAngle_ { |radians=0|
+	startAngle_ {|radians=0|
 		startAngle = radians;
 		prStartAngle = -0.5pi + startAngle; //*dirFlag); // start angle always relative to 0 is up, cw
 		this.ticksAtValues_(majTickVals, minTickVals); // refresh the list of maj/minTicks positions
 		// this.refresh;
 	}
 
-	sweepLength_ { |radians=2pi|
+	sweepLength_ {|radians=2pi|
 		sweepLength = radians;
 		prSweepLength = sweepLength * dirFlag;
 		valuePerRadian = spec.range / sweepLength;
@@ -317,32 +402,43 @@ Rotary : View {
 		// this.refresh;
 	}
 
-	majorTickRatio_ { |ratio = 0.25|
-		majorTickRatio = ratio;
-		this.refresh;
-	}
-	minorTickRatio_ { |ratio = 0.15|
-		minorTickRatio = ratio;
-		this.refresh;
-	}
-
-	orientation_ { |vertHorizOrCirc = \vertical|
+	orientation_ {|vertHorizOrCirc = \vertical|
 		orientation = vertHorizOrCirc;
 	}
 
-	showTicks_ { |bool|
+	valuePerPixel_ { |val|
+		valuePerPixel = val
+	}
+
+	rangeInPixels_ { |px|
+		valuePerPixel = spec.range/px;
+	}
+
+	/* Ticks */
+
+	showTicks_ {|bool|
 		showTicks = bool;
 		this.refresh;
 	}
 
+	majorTickRatio_ {|ratio = 0.25|
+		majorTickRatio = ratio;
+		this.refresh;
+	}
+
+	minorTickRatio_ {|ratio = 0.15|
+		minorTickRatio = ratio;
+		this.refresh;
+	}
+
 	// \inside, \outside, \center
-	tickAnchor_ { |anchor|
+	tickAnchor_ {|anchor|
 		tickAnchor = anchor;
 		this.refresh;
 	}
 
 	// arrays of radian positions, reference from startAngle
-	ticksAt_ { |majorRadPositions, minorRadPositions|
+	ticksAt_ {|majorRadPositions, minorRadPositions|
 		majTicks = majorRadPositions;
 		minTicks = minorRadPositions;
 		majTickVals = spec.map(majTicks / sweepLength);
@@ -351,7 +447,7 @@ Rotary : View {
 	}
 
 	// ticks at values unmapped by spec
-	ticksAtValues_ { |majorVals, minorVals|
+	ticksAtValues_ {|majorVals, minorVals|
 		majTicks = spec.unmap(majorVals)*sweepLength;
 		minTicks = spec.unmap(minorVals)*sweepLength;
 		majTickVals = majorVals;
@@ -360,19 +456,19 @@ Rotary : View {
 	}
 
 	// ticks values by value hop, unmapped by spec
-	ticksEveryVal_ { |valueHop, majorEvery=2|
+	ticksEveryVal_ {|valueHop, majorEvery=2|
 		// majTicks = majorTicks;
 		// minTicks = minorTicks;
 		this.refresh;
 	}
 
 
-	ticksEvery_ { |radienHop, majorEvery=2|
+	ticksEvery_ {|radienHop, majorEvery=2|
 		this.refresh;
 	}
 
 	// evenly distribute ticks
-	numTicks_ { |num, majorEvery=2|
+	numTicks_ {|num, majorEvery=2|
 		var hop, ticks, numMaj, majList, minList;
 		hop = sweepLength / (num-1);
 		ticks = num.collect{|i| i * hop};
@@ -383,13 +479,61 @@ Rotary : View {
 		this.ticksAt_(majList, minList);
 	}
 
+	/* Level */
+
+	showLevel_ {|bool|
+		showLevel = bool;
+		this.refresh;
+	}
+
+	fillLevel_ {|bool|
+		fillLevel = bool;
+		this.refresh;
+	}
+
+	strokeLevel_ {|bool|
+		strokeLevel = bool;
+		this.refresh;
+	}
+
+	levelFillColor_ {|color|
+		levelFillColor = color;
+		this.refresh;
+	}
+
+	// \inside, \outside, \around
+	levelStroke_ {|insideOutsideAround|
+		levelStroke = insideOutsideAround;
+		this.refresh;
+	}
+
+	levelStrokeColor_ {|color|
+		levelStrokeColor = color;
+		this.refresh;
+	}
+
+	levelStrokeWidth_ {|px|
+		levelStrokeWidth = px;
+		this.refresh;
+	}
+
+	/* Range */
+
+	fillRange_ {|bool|
+		fillRange = bool;
+		this.refresh;
+	}
+	strokeRange_ {|bool|
+		strokeRange = bool;
+		this.refresh;
+	}
 	rangeFillColor_ {|color|
 		rangeFillColor = color;
 		this.refresh;
 	}
 
 	// \inside, \outside, \around
-	rangeStroke_ { |insideOutsideAround|
+	rangeStroke_ {|insideOutsideAround|
 		rangeStroke = insideOutsideAround;
 		this.refresh;
 	}
@@ -399,25 +543,72 @@ Rotary : View {
 		this.refresh;
 	}
 
-	rangeStrokeWidth_ { |px|
+	rangeStrokeWidth_ {|px|
 		rangeStrokeWidth = px;
 		this.refresh;
 	}
 
-	showHandle_ { |bool|
+	/* Handle */
+
+	showHandle_ {|bool|
 		showHandle = bool;
 		this.refresh;
 	}
 
-	handleColor_ { |color|
+	handleColor_ {|color|
 		handleColor = color;
 		this.refresh;
 	}
 
-	handleWidth_ { |px|
+	handleWidth_ {|px|
 		handleWidth = px;
 		this.refresh;
 	}
+
+	/* Value Text */
+
+	showValue_ {|bool|
+		showValue = bool;
+		this.refresh;
+	}
+
+	// \top, \bottom, \center, \left, \right
+	// or Point() normalized to Point(w,h) = Point(1,1)
+	valuePosition_ {|position=\center|
+		valuePosition = position;
+		this.refresh;
+	}
+
+	valueFontSize_ {|size|
+		valueFontSize = size;
+		valueFont.hasPointSize.if({
+			valueFont.pointSize_(valueFontSize);
+		},{
+			valueFont.pixelSize_(valueFontSize);
+		});
+		this.refresh;
+	}
+
+	valueFont_ {|stringOrFont|
+		if (stringOrFont.isKindOf(Font)) {
+			valueFont = stringOrFont;
+		} { // string
+			valueFont = Font(stringOrFont, valueFontSize);
+		};
+		this.refresh;
+	}
+
+
+	valueFontColor_ {|color|
+		valueFontColor = color;
+		this.refresh;
+	}
+
+	round_ {|float = 0.1|
+		round = float;
+		this.refresh;
+	}
+
 
 }
 
