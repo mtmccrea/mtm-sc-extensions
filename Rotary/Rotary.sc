@@ -70,7 +70,7 @@ Rotary : View {
 		orientation = \vertical;
 		clickMode = \relative; // or \absolute, in which case value snaps to where mouse clicks
 
-		valuePerPixel = spec.range / 300;
+		valuePerPixel = spec.range / 200; // for interaction: movement range in pixels to cover full spec range
 		valuePerRadian = spec.range / sweepLength;
 
 		// range
@@ -132,7 +132,7 @@ Rotary : View {
 	defineDrawFunc {
 		var bnds, cen, radius;
 		var wedgeWidth, innerRad;
-		var drRange, drLevel, drTicks, drRangeStroke, drHandle, drValueTxt, drLocalTicks;
+		var drRange, drLevel, drTicks, drRangeStroke, drHandle, drValueTxt, drLocalTicks, drWedgeStroke;
 
 		rView.drawFunc_({|v|
 			bnds = v.bounds;
@@ -163,7 +163,7 @@ Rotary : View {
 		};
 
 		drLevel = { |fillOrStroke|
-			var swLen, inset;
+			var swLen; //, inset;
 			swLen = prSweepLength*normValue;
 			switch (fillOrStroke,
 				\fill, {
@@ -172,26 +172,9 @@ Rotary : View {
 					Pen.fill;
 				},
 				\stroke, {
-					"instroke".postln;
-					levelStroke.postln;
 					Pen.strokeColor_(levelStrokeColor);
 					Pen.width_(levelStrokeWidth);
-					inset = levelStrokeWidth*0.5;
-					switch (levelStroke,
-						\around, {
-							Pen.addAnnularWedge(cen, innerRad, radius-inset, prStartAngle, swLen);
-						},
-						\inside, {
-							Pen.addArc(cen, innerRad+inset, prStartAngle, swLen);
-						},
-						\outside, {
-							Pen.addArc(cen, radius-inset, prStartAngle, swLen);
-						},
-						\insideOutside, {
-							Pen.addArc(cen, innerRad+inset, prStartAngle, swLen);
-							Pen.addArc(cen, radius-inset, prStartAngle, swLen);
-						},
-					);
+					drWedgeStroke.(levelStroke, levelStrokeWidth, swLen);
 					Pen.stroke;
 				}
 			)
@@ -204,31 +187,6 @@ Rotary : View {
 			drLocalTicks.(majTicks, majorTickRatio, majorTickWidth);
 			drLocalTicks.(minTicks, minorTickRatio, minorTickWidth);
 			Pen.pop;
-		};
-
-		drLocalTicks = {|ticks, tickRatio, strokeWidth|
-			var penSt, penEnd;
-			penSt = switch (tickAnchor,
-				\inside, {innerRad},
-				\outside, {radius},
-				{innerRad + (wedgeWidth - (wedgeWidth * tickRatio) * 0.5)} // \center
-			);
-
-			penEnd = if (tickAnchor == \outside) {
-				penSt - (wedgeWidth * tickRatio)
-			} { // \inside or \center
-				penSt + (wedgeWidth * tickRatio)
-			};
-
-			ticks.do{|tickRad|
-				Pen.width_(strokeWidth);
-				Pen.moveTo(penSt@0);
-				Pen.push;
-				Pen.lineTo(penEnd@0);
-				Pen.rotate(tickRad * dirFlag);
-				Pen.stroke;
-				Pen.pop;
-			};
 		};
 
 		drHandle = {
@@ -244,28 +202,11 @@ Rotary : View {
 		};
 
 		drRangeStroke = {
-			var inset;
 			Pen.strokeColor_(rangeStrokeColor);
 			Pen.width_(rangeStrokeWidth);
-			inset = rangeStrokeWidth*0.5;
-			switch (rangeStroke,
-				\around, {
-					Pen.addAnnularWedge(cen, innerRad, radius-inset, prStartAngle, prSweepLength);
-				},
-				\inside, {
-					Pen.addArc(cen, innerRad+inset, prStartAngle, prSweepLength);
-				},
-				\outside, {
-					Pen.addArc(cen, radius-inset, prStartAngle, prSweepLength);
-				},
-				\insideOutside, {
-					Pen.addArc(cen, innerRad+inset, prStartAngle, prSweepLength);
-					Pen.addArc(cen, radius-inset, prStartAngle, prSweepLength);
-				},
-			);
+			drWedgeStroke.(rangeStroke, rangeStrokeWidth, prSweepLength);
 			Pen.stroke;
 		};
-
 
 		drValueTxt = {
 			var v, r, half;
@@ -292,6 +233,54 @@ Rotary : View {
 			};
 			Pen.fill;
 		}
+
+		// helper
+		drLocalTicks = {|ticks, tickRatio, strokeWidth|
+			var penSt, penEnd;
+			penSt = switch (tickAnchor,
+				\inside, {innerRad},
+				\outside, {radius},
+				{innerRad + (wedgeWidth - (wedgeWidth * tickRatio) * 0.5)} // \center
+			);
+
+			penEnd = if (tickAnchor == \outside) {
+				penSt - (wedgeWidth * tickRatio)
+			} { // \inside or \center
+				penSt + (wedgeWidth * tickRatio)
+			};
+
+			ticks.do{|tickRad|
+				Pen.width_(strokeWidth);
+				Pen.moveTo(penSt@0);
+				Pen.push;
+				Pen.lineTo(penEnd@0);
+				Pen.rotate(tickRad * dirFlag);
+				Pen.stroke;
+				Pen.pop;
+			};
+		};
+
+		// helper
+		drWedgeStroke = {|borderType, strokeWidth, swLength|
+			var inset;
+			inset = strokeWidth*0.5;
+			switch (rangeStroke,
+				\around, {
+					Pen.addAnnularWedge(cen, innerRad, radius-inset, prStartAngle, swLength);
+				},
+				\inside, {
+					Pen.addArc(cen, innerRad+inset, prStartAngle, swLength);
+				},
+				\outside, {
+					Pen.addArc(cen, radius-inset, prStartAngle, swLength);
+				},
+				\insideOutside, {
+					Pen.addArc(cen, innerRad+inset, prStartAngle, swLength);
+					Pen.addArc(cen, radius-inset, prStartAngle, swLength);
+				},
+			);
+		};
+
 	}
 
 	// INTERACT
@@ -356,16 +345,12 @@ Rotary : View {
 		rView.refresh;
 	}
 
-
 	value_ {|val|
 		postf("pre val/norm: %\n", [value, normValue]);
 		value = spec.constrain(val);
 		normValue = spec.unmap(value);
 		postf("post val/norm: %\n\n", [value, normValue]);
 		this.refresh;
-	}
-
-	label_ {|string, align=\top|
 	}
 
 	spec_ {|controlSpec|
@@ -598,7 +583,6 @@ Rotary : View {
 		this.refresh;
 	}
 
-
 	valueFontColor_ {|color|
 		valueFontColor = color;
 		this.refresh;
@@ -608,7 +592,6 @@ Rotary : View {
 		round = float;
 		this.refresh;
 	}
-
 
 }
 
