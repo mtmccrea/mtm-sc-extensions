@@ -38,28 +38,28 @@ Rotary : View {
 	var showValue, valuePosition, valueFontSize, valueFont, valueFontColor, round;
 
 	// ticks
-	var showTicks, tickAnchor, majorTickRatio, minorTickRatio,
+	var showTicks, tickAlign, majorTickRatio, minorTickRatio,
 	<majTicks, <minTicks, majTickVals, minTickVals,
 	tickColor, majorTickWidth, minorTickWidth;
 
-	var <rView; // the rotary view
+	var <rotaryView; // the rotary view
 	var <value, <input;
 	var <levelValue, <levelInput;
 	var dirFlag; // changes with direction: cw=1, ccw=-1
 	var prStartAngle; // start angle used internally, reference 0 to the RIGHT, as used in addAnnularWedge
 	var prSweepLength; // sweep length used internally, = sweepLength * dirFlag
 	var moveRelative = true;  // false means value jumps to click, TODO: disabled for infinite movement
-	var <view; // master view:
+	// var <view; // master view:
 	// private
-	var rViewCen;
+	var cen;
 	var stValue, stInput;
 	var mDownPnt;
 
-	*new { arg parent, bounds, spec, innerRadiusRatio, label, labelAlign, rangeLabelAlign, levelLabelAlign;
-		^super.new(parent, bounds).init(spec, innerRadiusRatio, label, labelAlign, rangeLabelAlign, levelLabelAlign)
+	*new { arg parent, bounds, spec, innerRadiusRatio, startAngle=0, sweepLength=2pi;
+		^super.new(parent, bounds).init(spec, innerRadiusRatio, startAngle, sweepLength)
 	}
 
-	init {|argSpec, argInnerRadiusRatio, label, labelAlign, rangeLabelAlign, levelLabelAlign|
+	init {|argSpec, argInnerRadiusRatio, argStartAngle, argSweepLength|
 
 		spec = argSpec ?? \unipolar.asSpec;
 		value = levelValue = spec.default;
@@ -70,8 +70,8 @@ Rotary : View {
 		// radius = argRadius ?? {this.bounds.width*0.5};
 		innerRadiusRatio = argInnerRadiusRatio ?? {0};
 
-		startAngle = 0; // reference 0 is UP
-		sweepLength = 2pi;
+		startAngle = argStartAngle; // reference 0 is UP
+		sweepLength = argSweepLength;
 		direction = \cw;
 		dirFlag = 1;
 		orientation = \vertical;
@@ -108,7 +108,7 @@ Rotary : View {
 
 		// handle
 		showHandle = true;
-		handleColor = Color.red; // nil disables stroke
+		handleColor = Color.red;
 		handleWidth = 2;
 
 		// ticks
@@ -119,15 +119,16 @@ Rotary : View {
 		minTickVals = [];
 		majorTickRatio = 0.25;
 		minorTickRatio = 0.15;
-		tickAnchor = \outside;
+		tickAlign = \outside;
 		majorTickWidth = 1;
 		minorTickWidth = 0.5;
 		tickColor = nil; // default to rangeStrokeColor
 
-		view = View(this, this.bounds.extent.asRect).resize_(5);
+		//view = View(this, this.bounds.extent.asRect).resize_(5);
 
-		rView = UserView(view, bounds: this.bounds.extent.asRect)
-		.resize_(5);
+		rotaryView = UserView(this, this.bounds.origin_(0@0)).resize_(5);
+
+		this.onResize_({rotaryView.bounds_(this.bounds.origin_(0@0))});
 
 		this.direction = direction; // this initializes prStarAngle and prSweepLength
 
@@ -138,15 +139,16 @@ Rotary : View {
 
 	// DRAW
 	defineDrawFunc {
-		var bnds, cen, radius;
+		var bnds, radius;
 		var wedgeWidth, innerRad;
 		var drRange, drLevel, drTicks, drRangeStroke, drHandle, drValueTxt, drLocalTicks, drWedgeStroke;
 
-		rView.drawFunc_({|v|
+		rotaryView.drawFunc_({|v|
 			bnds = v.bounds;
+			bnds.postln;
 			cen  = bnds.center;
-			rViewCen = cen;
-			radius = cen.x;
+			postf("cen: %\n\n", cen);
+			radius = min(cen.x, cen.y);
 
 			innerRad = radius*innerRadiusRatio;
 			wedgeWidth = radius - innerRad;
@@ -250,14 +252,14 @@ Rotary : View {
 		// helper
 		drLocalTicks = {|ticks, tickRatio, strokeWidth|
 			var penSt, penEnd;
-			penSt = switch (tickAnchor,
+			penSt = switch (tickAlign,
 				\inside, {innerRad},
 				\outside, {radius},
 				\center, {innerRad + (wedgeWidth - (wedgeWidth * tickRatio) * 0.5)},
 				{radius} // default to outside
 			);
 
-			penEnd = if (tickAnchor == \outside) {
+			penEnd = if (tickAlign == \outside) {
 				penSt - (wedgeWidth * tickRatio)
 			} { // \inside or \center
 				penSt + (wedgeWidth * tickRatio)
@@ -303,13 +305,13 @@ Rotary : View {
 	// INTERACT
 	defineInteraction {
 		var respondToLinearMove, respondToCircularMove;
-		rView.mouseDownAction_({|view, x, y|
+		rotaryView.mouseDownAction_({|v, x, y|
 			mDownPnt = x@y; // set for moveAction
 			stValue = value;
 			stInput = input;
 		});
 
-		rView.mouseMoveAction_({|view, x, y|
+		rotaryView.mouseMoveAction_({|v, x, y|
 			switch (orientation,
 				\vertical, {respondToLinearMove.(mDownPnt.y-y)},
 				\horizontal, {respondToLinearMove.(x-mDownPnt.x)},
@@ -326,11 +328,11 @@ Rotary : View {
 		respondToCircularMove = {|mMovePnt|
 			var stPos, endPos, stRad, endRad, dRad;
 
-			stPos = (mDownPnt - rViewCen);
+			stPos = (mDownPnt - cen);
 			stRad = atan2(stPos.y,stPos.x);
 			// postf("downAngle: %\n", stRad);
 
-			endPos = (mMovePnt - rViewCen);
+			endPos = (mMovePnt - cen);
 			endRad = atan2(endPos.y, endPos.x);
 			// postf("moveAngle: %\n", endRad);
 
@@ -359,7 +361,7 @@ Rotary : View {
 	}
 
 	refresh {
-		rView.refresh;
+		rotaryView.refresh;
 	}
 
 	value_ {|val|
@@ -477,6 +479,11 @@ Rotary : View {
 		valuePerPixel = spec.range/px;
 	}
 
+	innerRadiusRatio_ {|ratio|
+		innerRadiusRatio = ratio;
+		this.refresh
+	}
+
 	/* Ticks */
 
 	showTicks_ {|bool|
@@ -495,9 +502,17 @@ Rotary : View {
 	}
 
 	// \inside, \outside, \center
-	tickAnchor_ {|anchor|
-		tickAnchor = anchor;
-		this.refresh;
+	tickAlign_ {|insideOutSideCenter|
+		case
+		{
+			(insideOutSideCenter == \inside) or:
+			(insideOutSideCenter == \outside) or:
+			(insideOutSideCenter == \center)
+		} {
+			tickAlign = insideOutSideCenter;
+			this.refresh;
+		}
+		{ "Rotary:tickAlign_ : Invalid align argument. Must be 'inside', 'outside' or 'center'".warn }
 	}
 
 	// arrays of radian positions, reference from startAngle
@@ -506,6 +521,7 @@ Rotary : View {
 		minTicks = minorRadPositions;
 		majTickVals = spec.map(majTicks / sweepLength);
 		minTickVals = spec.map(minTicks / sweepLength);
+		showTicks = true;
 		this.refresh;
 	}
 
@@ -515,13 +531,20 @@ Rotary : View {
 		minTicks = spec.unmap(minorVals)*sweepLength;
 		majTickVals = majorVals;
 		minTickVals = minorVals;
+		showTicks = true;
 		this.refresh;
 	}
 
 	// ticks values by value hop, unmapped by spec
 	ticksEveryVal_ {|valueHop, majorEvery=2|
-		// majTicks = majorTicks;
-		// minTicks = minorTicks;
+		var num, ticks, numMaj, majList, minList;
+		num = (spec.range / valueHop).floor.asInt;
+		ticks = num.collect{|i| spec.unmap(i * valueHop) * sweepLength};
+		numMaj = num/majorEvery;
+		majList = List(numMaj);
+		minList = List(num-numMaj);
+		ticks.do{|val, i| if ((i%majorEvery) == 0) {majList.add(val)} {minList.add(val)} };
+		this.ticksAt_(majList, minList);
 		this.refresh;
 	}
 
@@ -572,8 +595,17 @@ Rotary : View {
 
 	// \inside, \outside, \around
 	levelStroke_ {|insideOutsideAround|
-		levelStroke = insideOutsideAround;
-		this.refresh;
+		case
+		{
+			(insideOutsideAround == \inside) or:
+			(insideOutsideAround == \outside) or:
+			(insideOutsideAround == \insideOutside) or:
+			(insideOutsideAround == \around)
+		} {
+			levelStroke = insideOutsideAround;
+			this.refresh;
+		}
+		{ "Rotary:levelStroke_ : Invalid align argument. Must be 'inside', 'outside', 'insideOutside' or 'around'".warn }
 	}
 
 	levelStrokeColor_ {|color|
@@ -603,8 +635,17 @@ Rotary : View {
 
 	// \inside, \outside, \around
 	rangeStroke_ {|insideOutsideAround|
-		rangeStroke = insideOutsideAround;
-		this.refresh;
+				case
+		{
+			(insideOutsideAround == \inside) or:
+			(insideOutsideAround == \outside) or:
+			(insideOutsideAround == \insideOutside) or:
+			(insideOutsideAround == \around)
+		} {
+			rangeStroke = insideOutsideAround;
+			this.refresh;
+		}
+		{ "Rotary:rangeStroke_ : Invalid align argument. Must be 'inside', 'outside', 'insideOutside' or 'around'".warn }
 	}
 
 	rangeStrokeColor_ {|color|
@@ -682,7 +723,7 @@ Rotary : View {
 /*
 r = Rotary(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.1).front;
 r.spec = [10, 100, \lin].asSpec;
-r.startAngle_(0.75pi);
+r.startAngle_(-0.75pi);
 r.sweepLength = 1.5pi;
 r.rangeFillColor = Color.new(0.9,0.9,0.9);
 r.strokeRange = false;
@@ -697,6 +738,18 @@ r.showTicks = true;
 r.numTicks = 5;
 r.tickColor = Color.gray;
 r.action = {|val| val.postln};
+
+
+r.tickAlign = \center
+r.tickAlign = \outside
+r.tickAlign = \inside
+r.majorTickRatio = 0.2
+r.strokeLevel =false
+r.fillLevel =true
+r.strokeRange =true
+r.showTicks=false
+r.strokeRange = false
+r.showHandle = false
 
 
 // continuous/wrapping knob
@@ -715,13 +768,13 @@ r.showTicks = true;
 r.numTicks_(12, 3, endTick: false);
 // r.numTicks_(9, 2);
 r.tickColor = Color.gray;
-r.tickAnchor = \outside;
+r.tickAlign = \outside;
 r.majorTickRatio = 1;
 r.action = {|val| val.postln};
-r.direction = \ccw;
+r.direction = \cw;
 r.wrap = true;
+// r.wrap = false;
 r.round = 1;
-
 
 // peak/rms meter
 
@@ -742,7 +795,7 @@ r.valuePosition = \bottom;
 r.showTicks = false;
 // r.numTicks_(12, 3, endTick: true);
 r.tickColor = Color.gray;
-r.tickAnchor = \center;
+r.tickAlign = \center;
 // r.majorTickRatio = 0.4;
 r.action = {|val| val.postln; ~sig.set(\amp, val.dbamp)};
 r.round = 0.1;
@@ -774,13 +827,47 @@ r.ticksAtValues_([0, -6, -12, -24], [-3, -9, -16]);
 ~meterListener = OSCdef(\meterRelay, { |msg|
 	var ampPkVals;
 	ampPkVals = msg[3..];
-	ampPkVals.postln;
+// ampPkVals.postln;
 	defer {r.levelValue = ampPkVals[0].ampdb}
 }, '/ampPkVals'
 );
 
 
 )
+
+
+
+/* in a layout */
+(
+var setupRot;
+setupRot = {|col|
+	var r;
+	r= Rotary(spec: [0,45].asSpec, innerRadiusRatio: 0.1);
+	r.spec = [10, 100, \lin].asSpec;
+	r.startAngle_(0.75pi).sweepLength_(1.5pi);
+	r.rangeFillColor = Color.new(0.9,0.9,0.9);
+	r.strokeRange = false;
+	r.showHandle_(true).handleColor_(col);
+	r.levelFillColor = col.alpha_(0.2);
+	r.strokeLevel = true;
+	r.levelStroke = \outside;
+	r.levelStrokeWidth = 3;
+	r.valueFontSize = 12;
+	r.valuePosition = \right;
+	r.showTicks = true;
+	r.numTicks_(15, 5);
+	r.tickColor = Color.gray;
+	r.action = {|val| val.postln};
+	r;
+};
+
+w = Window(bounds:Rect(100,100, 140*8, 150)).front.layout_(HLayout(*8.collect({setupRot.()})
+)
+)
+)
+
+
+
 
 r.spec = [-inf, inf, \lin].asSpec;
 r.value
