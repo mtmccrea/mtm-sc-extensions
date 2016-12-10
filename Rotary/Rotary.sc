@@ -12,6 +12,9 @@
 // fully build out and test tick position specification methods
 // consider giving level a different spec when levelFollowsValue.not
 // add snapToClick flag: value jumps to where the mouse clicks (\circular mode only?)
+// add offset to radius to allow for circle handle when handleType == \circle or \circleLine
+// add bipolar support to \strokeLevel
+
 Rotary : View {
 
 	var <spec;
@@ -33,9 +36,9 @@ Rotary : View {
 	var showLevel, levelFillColor, levelStrokeColor, strokeLevel, levelStroke, fillLevel, levelStrokeWidth;
 
 	// handle
-	var showHandle, handleColor, handleWidth;
+	var showHandle, handleColor, handleWidth, handleRadius, handleAlign, handleType;
 	// value txt
-	var showValue, valuePosition, valueFontSize, valueFont, valueFontColor, round;
+	var showValue, valueAlign, valueFontSize, valueFont, valueFontColor, round;
 
 	// ticks
 	var showTicks, tickAlign, majorTickRatio, minorTickRatio,
@@ -49,6 +52,7 @@ Rotary : View {
 	var prStartAngle; // start angle used internally, reference 0 to the RIGHT, as used in addAnnularWedge
 	var prSweepLength; // sweep length used internally, = sweepLength * dirFlag
 	var moveRelative = true;  // false means value jumps to click, TODO: disabled for infinite movement
+	var prCenterAngle, centerNorm, bipolar, centerValue, colorValBelow;
 	// var <view; // master view:
 	// private
 	var cen;
@@ -78,6 +82,11 @@ Rotary : View {
 		wrap = false;
 		clickMode = \relative; // or \absolute, in which case value snaps to where mouse clicks
 
+		bipolar = false;
+		centerValue = spec.minval+spec.range.half;
+		centerNorm = spec.unmap(centerValue);
+		colorValBelow = 0.4; // shift level color by this value below center
+
 		valuePerPixel = spec.range / 200; // for interaction: movement range in pixels to cover full spec range
 		valuePerRadian = spec.range / sweepLength;
 
@@ -100,7 +109,7 @@ Rotary : View {
 
 		// value
 		showValue = true;
-		valuePosition = \center; // \top, \bottom, \center, \left, \right, or Point()
+		valueAlign = \center; // \top, \bottom, \center, \left, \right, or Point()
 		valueFontSize = 12;
 		valueFont = Font("Helvetica", valueFontSize);
 		valueFontColor = Color.black;
@@ -110,6 +119,9 @@ Rotary : View {
 		showHandle = true;
 		handleColor = Color.red;
 		handleWidth = 2;
+		handleRadius = 3;
+		handleAlign = \outside;
+		handleType = \line;
 
 		// ticks
 		showTicks = false;
@@ -141,7 +153,7 @@ Rotary : View {
 	defineDrawFunc {
 		var bnds, radius;
 		var wedgeWidth, innerRad;
-		var drRange, drLevel, drTicks, drRangeStroke, drHandle, drValueTxt, drLocalTicks, drWedgeStroke;
+		var drRange, drLevel, drTicks, drRangeStroke, drHandle, drValueTxt, drLocalTicks, drWedgeStroke, drHanLine, drHanOval;
 
 		rotaryView.drawFunc_({|v|
 			bnds = v.bounds;
@@ -172,17 +184,29 @@ Rotary : View {
 		};
 
 		drLevel = { |fillOrStroke|
-			var swLen; //, inset;
-			swLen = prSweepLength * levelFollowsValue.if({input},{levelInput});
+			var swLen, col;
+			if (bipolar) {
+				swLen = prSweepLength * (levelFollowsValue.if({input},{levelInput}) - centerNorm);
+			} {
+				swLen = prSweepLength * levelFollowsValue.if({input},{levelInput});
+			};
+			// TESTTTTTAS;DLKFJA;LDKJG;LAKSDHGALKSDG
+			// ADS;LGKH
+			// swLen = prSweepLength * levelFollowsValue.if({input},{levelInput});
 			Pen.push;
 			switch (fillOrStroke,
 				\fill, {
-					Pen.fillColor_(levelFillColor);
-					Pen.addAnnularWedge(cen, innerRad, radius, prStartAngle, swLen);
+					col = levelFillColor;
+					if (bipolar and: (input<centerNorm)) {
+						col = Color.hsv(*col.asHSV * [1,1,colorValBelow, 1]);
+					};
+					Pen.fillColor_(col);
+					Pen.addAnnularWedge(cen, innerRad, radius, if (bipolar, {prCenterAngle}, {prStartAngle}), swLen);
 					Pen.fill;
 				},
 				\stroke, {
-					Pen.strokeColor_(levelStrokeColor);
+					col = levelStrokeColor;
+					Pen.strokeColor_(col);
 					Pen.width_(levelStrokeWidth);
 					drWedgeStroke.(levelStroke, levelStrokeWidth, swLen);
 					Pen.stroke;
@@ -203,12 +227,11 @@ Rotary : View {
 		drHandle = {
 			Pen.push;
 			Pen.translate(cen.x, cen.y);
-			Pen.width_(handleWidth);
-			Pen.strokeColor_(handleColor);
-			Pen.moveTo(innerRad@0);
-			Pen.lineTo(radius@0);
-			Pen.rotate(prStartAngle+(prSweepLength*input));
-			Pen.stroke;
+			switch (handleType,
+				\line, {drHanLine.()},
+				\circle, {drHanOval.()},
+				\circleLine, {Pen.push; drHanLine.(); Pen.pop; drHanOval.()}
+			);
 			Pen.pop;
 		};
 
@@ -226,11 +249,11 @@ Rotary : View {
 			v = value.round(round).asString;
 			Pen.push;
 			Pen.fillColor_(valueFontColor);
-			if (valuePosition.isKindOf(Point)) {
-				r = bnds.center_(bnds.extent*valuePosition);
+			if (valueAlign.isKindOf(Point)) {
+				r = bnds.center_(bnds.extent*valueAlign);
 				Pen.stringCenteredIn(v, r, valueFont, valueFontColor);
 			} {
-				r = switch (valuePosition,
+				r = switch (valueAlign,
 					\center, {bnds},
 					\left, {bnds.width_(bnds.width*0.5)},
 					\right, {
@@ -300,6 +323,28 @@ Rotary : View {
 			);
 		};
 
+		drHanLine = {
+			Pen.width_(handleWidth);
+			Pen.strokeColor_(handleColor);
+			Pen.moveTo(innerRad@0);
+			Pen.lineTo(radius@0);
+			Pen.rotate(prStartAngle+(prSweepLength*input));
+			Pen.stroke;
+		};
+
+		drHanOval = {
+			var d, r;
+			d = handleRadius*2;
+			r = Size(d, d).asRect;
+			Pen.fillColor_(handleColor);
+			switch (handleAlign,
+				\inside, {r = r.center_(innerRad@0)},
+				\outside, {r = r.center_(radius@0)},
+				\center, {r = r.center_((wedgeWidth*0.5+innerRad)@0)},
+			);
+			Pen.rotate(prStartAngle+(prSweepLength*input));
+			Pen.fillOval(r);
+		};
 	}
 
 	// INTERACT
@@ -455,15 +500,28 @@ Rotary : View {
 	startAngle_ {|radians=0|
 		startAngle = radians;
 		prStartAngle = -0.5pi + startAngle; //*dirFlag); // start angle always relative to 0 is up, cw
-		this.ticksAtValues_(majTickVals, minTickVals); // refresh the list of maj/minTicks positions
+		this.setPrCenter;
+		this.ticksAtValues_(majTickVals, minTickVals, false); // refresh the list of maj/minTicks positions
 		// this.refresh;
+	}
+
+	setPrCenter {
+		prCenterAngle = -0.5pi + startAngle + (centerNorm*sweepLength);
+		this.refresh;
+	}
+
+	centerValue_ {|value|
+		centerValue = spec.constrain(value);
+		centerNorm = spec.unmap(centerValue);
+		this.setPrCenter;
 	}
 
 	sweepLength_ {|radians=2pi|
 		sweepLength = radians;
 		prSweepLength = sweepLength * dirFlag;
 		valuePerRadian = spec.range / sweepLength;
-		this.ticksAtValues_(majTickVals, minTickVals); // refresh the list of maj/minTicks positions
+		this.setPrCenter;
+		this.ticksAtValues_(majTickVals, minTickVals, false); // refresh the list of maj/minTicks positions
 		// this.refresh;
 	}
 
@@ -482,6 +540,16 @@ Rotary : View {
 	innerRadiusRatio_ {|ratio|
 		innerRadiusRatio = ratio;
 		this.refresh
+	}
+
+	bipolar_ {|bool|
+		bipolar = bool;
+		this.refresh;
+	}
+
+	colorValBelow_ {|ratio|
+		colorValBelow = ratio;
+		this.refresh;
 	}
 
 	/* Ticks */
@@ -516,22 +584,22 @@ Rotary : View {
 	}
 
 	// arrays of radian positions, reference from startAngle
-	ticksAt_ {|majorRadPositions, minorRadPositions|
+	ticksAt_ {|majorRadPositions, minorRadPositions, show=true|
 		majTicks = majorRadPositions;
 		minTicks = minorRadPositions;
 		majTickVals = spec.map(majTicks / sweepLength);
 		minTickVals = spec.map(minTicks / sweepLength);
-		showTicks = true;
+		show.if{showTicks = true};
 		this.refresh;
 	}
 
 	// ticks at values unmapped by spec
-	ticksAtValues_ {|majorVals, minorVals|
+	ticksAtValues_ {|majorVals, minorVals, show=true|
 		majTicks = spec.unmap(majorVals)*sweepLength;
 		minTicks = spec.unmap(minorVals)*sweepLength;
 		majTickVals = majorVals;
 		minTickVals = minorVals;
-		showTicks = true;
+		show.if{showTicks = true};
 		this.refresh;
 	}
 
@@ -635,7 +703,7 @@ Rotary : View {
 
 	// \inside, \outside, \around
 	rangeStroke_ {|insideOutsideAround|
-				case
+		case
 		{
 			(insideOutsideAround == \inside) or:
 			(insideOutsideAround == \outside) or:
@@ -675,6 +743,40 @@ Rotary : View {
 		this.refresh;
 	}
 
+	// \circle, \line, or \circleLine
+	handleType_ {|circleOrLine|
+		case
+		{
+			(circleOrLine == \circle) or:
+			(circleOrLine == \line) or:
+			(circleOrLine == \circleLine)
+		} {
+			handleType = circleOrLine;
+			this.refresh
+		}
+		{ "Rotary:handleType_ : Invalid type argument. Must be 'circle', 'line' or 'circleLine'".warn }
+	}
+
+	// for handleType: \circle, \circleLine
+	handleRadius_ {|px|
+		handleRadius = px;
+		this.refresh;
+	}
+
+	// for handleType: \circle, \circleLine
+	handleAlign_ {|insideOutSideCenter|
+		case
+		{
+			(insideOutSideCenter == \inside) or:
+			(insideOutSideCenter == \outside) or:
+			(insideOutSideCenter == \center)
+		} {
+			handleAlign = insideOutSideCenter;
+			this.refresh;
+		}
+		{ "Rotary:handleAlign_ : Invalid align argument. Must be 'inside', 'outside' or 'center'".warn }
+	}
+
 	/* Value Text */
 
 	showValue_ {|bool|
@@ -684,8 +786,8 @@ Rotary : View {
 
 	// \top, \bottom, \center, \left, \right
 	// or Point() normalized to Point(w,h) = Point(1,1)
-	valuePosition_ {|position=\center|
-		valuePosition = position;
+	valueAlign_ {|align=\center|
+		valueAlign = align;
 		this.refresh;
 	}
 
@@ -733,7 +835,7 @@ r.strokeLevel = true;
 r.levelStroke = \outside;
 r.levelStrokeWidth = 3;
 r.valueFontSize = 36;
-r.valuePosition = \right;
+r.valueAlign = \right;
 r.showTicks = true;
 r.numTicks = 5;
 r.tickColor = Color.gray;
@@ -763,7 +865,7 @@ r.showHandle_(true).handleColor_(Color.green);
 r.fillLevel = false;
 r.strokeLevel = false;
 r.valueFontSize = 36;
-r.valuePosition = \center;
+r.valueAlign = \center;
 r.showTicks = true;
 r.numTicks_(12, 3, endTick: false);
 // r.numTicks_(9, 2);
@@ -791,7 +893,7 @@ r.showHandle_(true).handleColor_(Color.black);
 r.fillLevel = true;
 r.strokeLevel = false;
 r.valueFontSize = 36;
-r.valuePosition = \bottom;
+r.valueAlign = \bottom;
 r.showTicks = false;
 // r.numTicks_(12, 3, endTick: true);
 r.tickColor = Color.gray;
@@ -853,7 +955,7 @@ setupRot = {|col|
 	r.levelStroke = \outside;
 	r.levelStrokeWidth = 3;
 	r.valueFontSize = 12;
-	r.valuePosition = \right;
+	r.valueAlign = \right;
 	r.showTicks = true;
 	r.numTicks_(15, 5);
 	r.tickColor = Color.gray;
@@ -866,6 +968,42 @@ w = Window(bounds:Rect(100,100, 140*8, 150)).front.layout_(HLayout(*8.collect({s
 )
 )
 
+/* circle handle */
+(
+r = Rotary(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.4).front;
+r.spec = [0, 360, \lin].asSpec;
+r.startAngle_(0.0pi);
+r.sweepLength = 2pi;
+r.rangeFillColor = Color.new(0.9,0.9,0.9);
+r.strokeRange = false;
+r.showHandle_(true).handleColor_(Color.green);
+r.fillLevel = false;
+r.strokeLevel = false;
+r.valueFontSize = 36;
+r.valueAlign = \center;
+r.showTicks = true;
+r.numTicks_(12, 3, endTick: false);
+// r.numTicks_(9, 2);
+r.tickColor = Color.gray;
+r.tickAlign = \inside;
+r.majorTickRatio = 1;
+r.action = {|val| val.postln};
+r.direction = \cw;
+r.wrap = true;
+// r.wrap = false;
+r.round = 1;
+r.innerRadiusRatio_(0.25);
+r.handleType_(\circle);
+r.handleType_(\circleLine);
+r.handleRadius_(8);
+r.handleAlign_(\center);
+r.handleAlign_(\inside);
+r.value = 45;
+r.fillLevel=true;
+r.levelFillColor_(Color.green.alpha_(0.15));
+r.showTicks_(false);
+r.valueAlign;
+)
 
 
 
