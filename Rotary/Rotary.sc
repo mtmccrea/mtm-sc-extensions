@@ -12,8 +12,16 @@
 // fully build out and test tick position specification methods
 // consider giving level a different spec when levelFollowsValue.not
 // add snapToClick flag: value jumps to where the mouse clicks (\circular mode only?)
-// add offset to radius to allow for circle handle when handleType == \circle or \circleLine
+// add offset to radius to allow for circle handle when handleType == \circle or \lineAndCircle
 // add bipolar support to \strokeLevel
+// make good default font size
+// Pen:capStyle
+// colorFunction - rangeFillColor.value(this.value)
+// separate meter functionality, subclass
+// step size for nonlinear specs
+// range mode - see lnx studio
+// does it play nice with palettes? - default colors according to palettes
+// Managing properties: Event
 
 Rotary : View {
 
@@ -23,6 +31,7 @@ Rotary : View {
 
 	// dimensions
 	var innerRadiusRatio; // radius,
+	var boarderPx, boarderPad;
 
 	// movement
 	var <direction, <startAngle, <sweepLength, <orientation;
@@ -81,11 +90,13 @@ Rotary : View {
 		orientation = \vertical;
 		wrap = false;
 		clickMode = \relative; // or \absolute, in which case value snaps to where mouse clicks
+		boarderPx = 1;
+		boarderPad = boarderPx;
 
 		bipolar = false;
 		centerValue = spec.minval+spec.range.half;
 		centerNorm = spec.unmap(centerValue);
-		colorValBelow = 0.4; // shift level color by this value below center
+		colorValBelow = 0.65; // shift level color by this value below center
 
 		valuePerPixel = spec.range / 200; // for interaction: movement range in pixels to cover full spec range
 		valuePerRadian = spec.range / sweepLength;
@@ -160,7 +171,7 @@ Rotary : View {
 			bnds.postln;
 			cen  = bnds.center;
 			postf("cen: %\n\n", cen);
-			radius = min(cen.x, cen.y);
+			radius = min(cen.x, cen.y) - boarderPad;
 
 			innerRad = radius*innerRadiusRatio;
 			wedgeWidth = radius - innerRad;
@@ -185,14 +196,12 @@ Rotary : View {
 
 		drLevel = { |fillOrStroke|
 			var swLen, col;
-			if (bipolar) {
-				swLen = prSweepLength * (levelFollowsValue.if({input},{levelInput}) - centerNorm);
+
+			swLen = if (bipolar) {
+				prSweepLength * (levelFollowsValue.if({input},{levelInput}) - centerNorm);
 			} {
-				swLen = prSweepLength * levelFollowsValue.if({input},{levelInput});
+				prSweepLength * levelFollowsValue.if({input},{levelInput});
 			};
-			// TESTTTTTAS;DLKFJA;LDKJG;LAKSDHGALKSDG
-			// ADS;LGKH
-			// swLen = prSweepLength * levelFollowsValue.if({input},{levelInput});
 			Pen.push;
 			switch (fillOrStroke,
 				\fill, {
@@ -206,9 +215,12 @@ Rotary : View {
 				},
 				\stroke, {
 					col = levelStrokeColor;
+					if (bipolar and: (input<centerNorm)) {
+						col = Color.hsv(*col.asHSV * [1,1,colorValBelow, 1]);
+					};
 					Pen.strokeColor_(col);
 					Pen.width_(levelStrokeWidth);
-					drWedgeStroke.(levelStroke, levelStrokeWidth, swLen);
+					drWedgeStroke.(levelStroke, levelStrokeWidth, if (bipolar, {prCenterAngle}, {prStartAngle}), swLen);
 					Pen.stroke;
 				}
 			);
@@ -230,7 +242,7 @@ Rotary : View {
 			switch (handleType,
 				\line, {drHanLine.()},
 				\circle, {drHanOval.()},
-				\circleLine, {Pen.push; drHanLine.(); Pen.pop; drHanOval.()}
+				\lineAndCircle, {Pen.push; drHanLine.(); Pen.pop; drHanOval.()}
 			);
 			Pen.pop;
 		};
@@ -239,7 +251,7 @@ Rotary : View {
 			Pen.push;
 			Pen.strokeColor_(rangeStrokeColor);
 			Pen.width_(rangeStrokeWidth);
-			drWedgeStroke.(rangeStroke, rangeStrokeWidth, prSweepLength);
+			drWedgeStroke.(rangeStroke, rangeStrokeWidth, prStartAngle, prSweepLength);
 			Pen.stroke;
 			Pen.pop;
 		};
@@ -303,22 +315,22 @@ Rotary : View {
 		};
 
 		// helper
-		drWedgeStroke = {|borderType, strokeWidth, swLength|
+		drWedgeStroke = {|borderType, strokeWidth, stAng, swLength|
 			var inset;
 			inset = strokeWidth*0.5;
 			switch (borderType,
 				\around, {
-					Pen.addAnnularWedge(cen, innerRad, radius-inset, prStartAngle, swLength);
+					Pen.addAnnularWedge(cen, innerRad, radius-inset, stAng, swLength);
 				},
 				\inside, {
-					Pen.addArc(cen, innerRad+inset, prStartAngle, swLength);
+					Pen.addArc(cen, innerRad+inset, stAng, swLength);
 				},
 				\outside, {
-					Pen.addArc(cen, radius-inset, prStartAngle, swLength);
+					Pen.addArc(cen, radius-inset, stAng, swLength);
 				},
 				\insideOutside, {
-					Pen.addArc(cen, innerRad+inset, prStartAngle, swLength);
-					Pen.addArc(cen, radius-inset, prStartAngle, swLength);
+					Pen.addArc(cen, innerRad+inset, stAng, swLength);
+					Pen.addArc(cen, radius-inset, stAng, swLength);
 				},
 			);
 		};
@@ -743,27 +755,29 @@ Rotary : View {
 		this.refresh;
 	}
 
-	// \circle, \line, or \circleLine
+	// \circle, \line, or \lineAndCircle
 	handleType_ {|circleOrLine|
 		case
 		{
 			(circleOrLine == \circle) or:
 			(circleOrLine == \line) or:
-			(circleOrLine == \circleLine)
+			(circleOrLine == \lineAndCircle)
 		} {
 			handleType = circleOrLine;
+			this.updateBoarderPad;
 			this.refresh
 		}
-		{ "Rotary:handleType_ : Invalid type argument. Must be 'circle', 'line' or 'circleLine'".warn }
+		{ "Rotary:handleType_ : Invalid type argument. Must be 'circle', 'line' or 'lineAndCircle'".warn }
 	}
 
-	// for handleType: \circle, \circleLine
+	// for handleType: \circle, \lineAndCircle
 	handleRadius_ {|px|
 		handleRadius = px;
+		this.updateBoarderPad;
 		this.refresh;
 	}
 
-	// for handleType: \circle, \circleLine
+	// for handleType: \circle, \lineAndCircle
 	handleAlign_ {|insideOutSideCenter|
 		case
 		{
@@ -772,9 +786,20 @@ Rotary : View {
 			(insideOutSideCenter == \center)
 		} {
 			handleAlign = insideOutSideCenter;
-			this.refresh;
+			this.updateBoarderPad;
+			(handleType==\line).not.if{this.refresh};
 		}
 		{ "Rotary:handleAlign_ : Invalid align argument. Must be 'inside', 'outside' or 'center'".warn }
+	}
+
+	updateBoarderPad {
+		boarderPad = if (handleType==\line)
+		{boarderPx}
+		{	// handleType == \circle or \lineAndCircle
+			if (handleAlign==\outside)
+			{boarderPx + handleRadius}
+			{boarderPx}
+		};
 	}
 
 	/* Value Text */
@@ -941,7 +966,7 @@ r.ticksAtValues_([0, -6, -12, -24], [-3, -9, -16]);
 
 /* in a layout */
 (
-var setupRot;
+var setupRot, numRots = 8;
 setupRot = {|col|
 	var r;
 	r= Rotary(spec: [0,45].asSpec, innerRadiusRatio: 0.1);
@@ -949,10 +974,12 @@ setupRot = {|col|
 	r.startAngle_(0.75pi).sweepLength_(1.5pi);
 	r.rangeFillColor = Color.new(0.9,0.9,0.9);
 	r.strokeRange = false;
-	r.showHandle_(true).handleColor_(col);
-	r.levelFillColor = col.alpha_(0.2);
+	r.levelStrokeColor = col;
+	r.handleColor = col;
+	r.levelFillColor = col.copy.alpha_(0.2);
 	r.strokeLevel = true;
 	r.levelStroke = \outside;
+	// r.valueFontColor = col.val_(0.2);
 	r.levelStrokeWidth = 3;
 	r.valueFontSize = 12;
 	r.valueAlign = \right;
@@ -963,7 +990,10 @@ setupRot = {|col|
 	r;
 };
 
-w = Window(bounds:Rect(100,100, 140*8, 150)).front.layout_(HLayout(*8.collect({setupRot.()})
+w = Window(bounds:Rect(100,100, 140*8, 150)).front.layout_(HLayout(*numRots.collect({|i|setupRot.(
+	Color.hsv(numRots.reciprocal*i, 1,1,1)
+	// Color.red
+)})))
 )
 )
 )
@@ -994,7 +1024,7 @@ r.wrap = true;
 r.round = 1;
 r.innerRadiusRatio_(0.25);
 r.handleType_(\circle);
-r.handleType_(\circleLine);
+r.handleType_(\lineAndCircle);
 r.handleRadius_(8);
 r.handleAlign_(\center);
 r.handleAlign_(\inside);
@@ -1005,6 +1035,44 @@ r.showTicks_(false);
 r.valueAlign;
 )
 
+// bipolar
+(
+r = Rotary(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.4).front;
+r.spec = [-180, 180, \lin].asSpec;
+r.startAngle_(-0.9pi);
+r.sweepLength = 1.8pi;
+r.rangeFillColor = Color.new(0.9,0.9,0.9);
+r.strokeRange = false;
+r.showHandle_(true).handleColor_(Color.green);
+r.fillLevel = false;
+r.strokeLevel = false;
+r.valueFontSize = 36;
+r.valueAlign = \center;
+r.showTicks = true;
+r.numTicks_(12, 3, endTick: false);
+// r.numTicks_(9, 2);
+r.tickColor = Color.gray;
+r.tickAlign = \inside;
+r.majorTickRatio = 1;
+r.action = {|val| val.postln};
+r.direction = \cw;
+r.wrap = false;
+// r.wrap = false;
+r.round = 1;
+r.innerRadiusRatio_(0.25);
+r.handleType_(\circle);
+r.handleType_(\lineAndCircle);
+r.handleRadius_(8);
+r.handleAlign_(\center);
+// r.value = 45;
+r.fillLevel=true;
+r.levelFillColor_(Color.green.alpha_(0.15));
+r.showTicks_(false);
+r.bipolar_(true);
+r.centerValue = 0;
+r.colorValBelow = 0.4
+r.wrap = false;
+)
 
 
 r.spec = [-inf, inf, \lin].asSpec;
