@@ -27,7 +27,11 @@ Rotary : View {
 
 	var <spec;
 	var <action;
-	var <levelFollowsValue;
+	var levelFollowsValue;
+
+	// properties
+	var baseProperties; // assembled in init
+	var properties; // property list used by draw, recalculated every property change
 
 	// dimensions
 	var innerRadiusRatio; // radius,
@@ -39,8 +43,12 @@ Rotary : View {
 	var >wrap;
 	var clickMode;
 
+	// layers with properties
+	var rangeProperties, levelProperties, textProperties, tickProperties, handleProperties;
+
 	//range
 	var fillRange, strokeRange, rangeFillColor, rangeStrokeColor, rangeStroke, rangeStrokeWidth;
+
 	// level
 	var showLevel, levelFillColor, levelStrokeColor, strokeLevel, levelStroke, fillLevel, levelStrokeWidth;
 
@@ -54,7 +62,7 @@ Rotary : View {
 	<majTicks, <minTicks, majTickVals, minTickVals,
 	tickColor, majorTickWidth, minorTickWidth;
 
-	var <rotaryView; // the rotary view
+	var <rotaryUserView;
 	var <value, <input;
 	var <levelValue, <levelInput;
 	var dirFlag; // changes with direction: cw=1, ccw=-1
@@ -63,9 +71,12 @@ Rotary : View {
 	var moveRelative = true;  // false means value jumps to click, TODO: disabled for infinite movement
 	var prCenterAngle, centerNorm, bipolar, centerValue, colorValBelow;
 	// var <view; // master view:
-	// private
-	var cen;
+
+	// user view dimension vars used by the drawing classes
+	var bnds, cen, radius, innerRadius, wedgeWidth;
 	var stValue, stInput;
+
+
 	var mDownPnt;
 
 	*new { arg parent, bounds, spec, innerRadiusRatio, startAngle=0, sweepLength=2pi;
@@ -77,12 +88,50 @@ Rotary : View {
 		spec = argSpec ?? \unipolar.asSpec;
 		value = levelValue = spec.default;
 		input = levelInput = spec.unmap(value);
-		levelFollowsValue = true;
 		action = {};
 
-		// radius = argRadius ?? {this.bounds.width*0.5};
-		innerRadiusRatio = argInnerRadiusRatio ?? {0};
+		// drawing properties stored in an Event
+		// used by one or more layer property Events
 
+		// TODO: use baseProperties to set anything that would be useful as a preset
+
+		baseProperties = (
+			// levelFollowsValue:	true,
+			// innerRadius:	0,
+			// startAngle:		argStartAngle, // reference 0 is UP
+			// sweepLength:	argSweepLength,
+			// direction:		\cw,
+			// dirFlag:		1,
+			// orientation:	\vertical,
+			// wrap: 			false,
+			// clickMode: 		\relative, // or \absolute, in which case value snaps to where mouse clicks
+
+			// bipolar: 		false,
+			// centerValue:	spec.minval+spec.range.half,
+			// centerNorm:		spec.unmap(spec.minval+spec.range.half),
+			colorValBelow:	0.65, // shift level color by this value below center
+			//
+			// valuePerPixel:	spec.range / 200, // for interaction: movement range in pixels to cover full spec range
+			// valuePerRadian:	spec.range / argSweepLength,
+			// boarderPx: 		1,
+			// boarderPad: 	1,
+
+			// view properties, set by draw function
+			// cen: nil, bnds: nil, radius: nil, wedgeWidth: nil, innerRad: nil,
+		);
+		baseProperties.postln;
+
+
+		#range, level, text, tick, handle = [
+			RotaryRangeLayer, RotaryLevelLayer, RotaryTextLayer, RotaryTickLayer, RotaryHandleLayer
+		].collect({
+			|class|
+			class.new(this, class.properties.parent_(baseProperties))
+		})
+
+		levelFollowsValue = true;
+		innerRadiusRatio = argInnerRadiusRatio ?? {0};
+		//
 		startAngle = argStartAngle; // reference 0 is UP
 		sweepLength = argSweepLength;
 		direction = \cw;
@@ -91,7 +140,7 @@ Rotary : View {
 		wrap = false;
 		clickMode = \relative; // or \absolute, in which case value snaps to where mouse clicks
 		boarderPx = 1;
-		boarderPad = boarderPx;
+		boarderPad = /boarderPx;
 
 		bipolar = false;
 		centerValue = spec.minval+spec.range.half;
@@ -101,57 +150,57 @@ Rotary : View {
 		valuePerPixel = spec.range / 200; // for interaction: movement range in pixels to cover full spec range
 		valuePerRadian = spec.range / sweepLength;
 
-		// range
-		fillRange = true;
-		strokeRange = true;
-		rangeFillColor = Color.gray;
-		rangeStroke = \around;		// \inside, \outside, \around
-		rangeStrokeColor = Color.black;
-		rangeStrokeWidth = 1;
+		// // range
+		// fillRange = true;
+		// strokeRange = true;
+		// rangeFillColor = Color.gray;
+		// rangeStroke = \around;		// \inside, \outside, \around
+		// rangeStrokeColor = Color.black;
+		// rangeStrokeWidth = 1;
+		//
+		// // level
+		// showLevel = true;
+		// strokeLevel = true;
+		// levelStroke = \around;
+		// levelStrokeColor = Color.green;
+		// levelStrokeWidth = 2;
+		// fillLevel = true;
+		// levelFillColor = Color.white;
 
-		// level
-		showLevel = true;
-		strokeLevel = true;
-		levelStroke = \around;
-		levelStrokeColor = Color.green;
-		levelStrokeWidth = 2;
-		fillLevel = true;
-		levelFillColor = Color.white;
+		// // value text
+		// showValue = true;
+		// valueAlign = \center; // \top, \bottom, \center, \left, \right, or Point()
+		// valueFontSize = 12;
+		// valueFont = Font("Helvetica", valueFontSize);
+		// valueFontColor = Color.black;
+		// round = 0.1;
 
-		// value
-		showValue = true;
-		valueAlign = \center; // \top, \bottom, \center, \left, \right, or Point()
-		valueFontSize = 12;
-		valueFont = Font("Helvetica", valueFontSize);
-		valueFontColor = Color.black;
-		round = 0.1;
-
-		// handle
-		showHandle = true;
-		handleColor = Color.red;
-		handleWidth = 2;
-		handleRadius = 3;
-		handleAlign = \outside;
-		handleType = \line;
-
-		// ticks
-		showTicks = false;
-		majTicks = [];
-		minTicks = [];
-		majTickVals = [];
-		minTickVals = [];
-		majorTickRatio = 0.25;
-		minorTickRatio = 0.15;
-		tickAlign = \outside;
-		majorTickWidth = 1;
-		minorTickWidth = 0.5;
-		tickColor = nil; // default to rangeStrokeColor
+		// // handle
+		// showHandle = true;
+		// handleColor = Color.red;
+		// handleWidth = 2;
+		// handleRadius = 3;
+		// handleAlign = \outside;
+		// handleType = \line;
+		//
+		// // ticks
+		// showTicks = false;
+		// majTicks = [];
+		// minTicks = [];
+		// majTickVals = [];
+		// minTickVals = [];
+		// majorTickRatio = 0.25;
+		// minorTickRatio = 0.15;
+		// tickAlign = \outside;
+		// majorTickWidth = 1;
+		// minorTickWidth = 0.5;
+		// tickColor = nil; // default to rangeStrokeColor
 
 		//view = View(this, this.bounds.extent.asRect).resize_(5);
 
-		rotaryView = UserView(this, this.bounds.origin_(0@0)).resize_(5);
+		rotaryUserView = UserView(this, this.bounds.origin_(0@0)).resize_(5);
 
-		this.onResize_({rotaryView.bounds_(this.bounds.origin_(0@0))});
+		this.onResize_({rotaryUserView.bounds_(this.bounds.origin_(0@0))});
 
 		this.direction = direction; // this initializes prStarAngle and prSweepLength
 
@@ -160,31 +209,51 @@ Rotary : View {
 
 	}
 
+	// "bake" properties if any are updated
+	calcProperties { |which|
+		switch(
+			\default, {
+				// update all properties
+			},
+			\range,	 {},
+			\level,	 {},
+			\text,	 {},
+			\tick,	 {},
+			\handle, {},
+		)
+	}
+
 	// DRAW
 	defineDrawFunc {
-		var bnds, radius;
-		var wedgeWidth, innerRad;
+
 		var drRange, drLevel, drTicks, drRangeStroke, drHandle, drValueTxt, drLocalTicks, drWedgeStroke, drHanLine, drHanOval;
 
-		rotaryView.drawFunc_({|v|
-			bnds = v.bounds;
-			bnds.postln;
-			cen  = bnds.center;
-			postf("cen: %\n\n", cen);
-			radius = min(cen.x, cen.y) - boarderPad;
+		rotaryUserView.drawFunc_({|v|
 
-			innerRad = radius*innerRadiusRatio;
-			wedgeWidth = radius - innerRad;
+			// "global" instance vars
+			bnds = v.bounds;
+			cen  = bnds.center;
+			radius = min(cen.x, cen.y) - boarderPad;
+			innerRadius = radius*innerRadiusRatio;
 
 			// order of drawing here is important for proper layering
-			if (fillRange) {drRange.()};
-			if (showLevel and: fillLevel) {drLevel.(\fill)};
+			if (range.p.fill) {range.fill};
+			if (level.p.fill) {level.fill};
 			// if (showLevel and: strokeLevel) {drLevel.(\stroke)};
 			if (showTicks) {drTicks.()};
-			if (strokeRange) {drRangeStroke.()};
-			if (showLevel and: strokeLevel) {drLevel.(\stroke)};
+			if (range.p.stroke) {range.stroke};
+			if (level.p.stroke) {level.stroke};
 			if (showHandle) {drHandle.()};
 			if (showValue) {drValueTxt.()};
+			// // order of drawing here is important for proper layering
+			// if (fillRange) {drRange.()};
+			// if (showLevel and: fillLevel) {drLevel.(\fill)};
+			// // if (showLevel and: strokeLevel) {drLevel.(\stroke)};
+			// if (showTicks) {drTicks.()};
+			// if (strokeRange) {drRangeStroke.()};
+			// if (showLevel and: strokeLevel) {drLevel.(\stroke)};
+			// if (showHandle) {drHandle.()};
+			// if (showValue) {drValueTxt.()};
 
 		});
 
@@ -362,13 +431,13 @@ Rotary : View {
 	// INTERACT
 	defineInteraction {
 		var respondToLinearMove, respondToCircularMove;
-		rotaryView.mouseDownAction_({|v, x, y|
+		rotaryUserView.mouseDownAction_({|v, x, y|
 			mDownPnt = x@y; // set for moveAction
 			stValue = value;
 			stInput = input;
 		});
 
-		rotaryView.mouseMoveAction_({|v, x, y|
+		rotaryUserView.mouseMoveAction_({|v, x, y|
 			switch (orientation,
 				\vertical, {respondToLinearMove.(mDownPnt.y-y)},
 				\horizontal, {respondToLinearMove.(x-mDownPnt.x)},
@@ -418,7 +487,7 @@ Rotary : View {
 	}
 
 	refresh {
-		rotaryView.refresh;
+		rotaryUserView.refresh;
 	}
 
 	value_ {|val|
