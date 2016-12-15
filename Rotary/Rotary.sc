@@ -246,7 +246,7 @@ Rotary : View {
 			if (showTicks) {drTicks.()};
 			if (range.p.stroke) {range.stroke};
 			if (level.p.stroke) {level.stroke};
-			if (showHandle) {drHandle.()};
+			if (handle.p.show) {handle.draw};
 			if (showValue) {drValueTxt.()};
 			// // order of drawing here is important for proper layering
 			// if (fillRange) {drRange.()};
