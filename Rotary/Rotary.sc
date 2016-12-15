@@ -23,6 +23,10 @@
 // does it play nice with palettes? - default colors according to palettes
 // Managing properties: Event
 
+// TODO: this could be a generic template for drawing layers onto a UserView
+// -- you could specify which DrawingLayer classes are used to draw, each with access
+// -- to the Rotary's state variables and it's own properties
+
 Rotary : View {
 
 	var <spec;
@@ -58,26 +62,30 @@ Rotary : View {
 	var showValue, valueAlign, valueFontSize, valueFont, valueFontColor, round;
 
 	// ticks
-	var showTicks, tickAlign, majorTickRatio, minorTickRatio,
-	<majTicks, <minTicks, majTickVals, minTickVals,
-	tickColor, majorTickWidth, minorTickWidth;
+	var showTicks, tickAlign, majorTickRatio, minorTickRatio, tickColor, majorTickWidth, minorTickWidth;
+
+	var <majTicks, <minTicks, majTickVals, minTickVals;
+
 
 	var <rotaryUserView;
 	var <value, <input;
 	var <levelValue, <levelInput;
-	var dirFlag; // changes with direction: cw=1, ccw=-1
-	var prStartAngle; // start angle used internally, reference 0 to the RIGHT, as used in addAnnularWedge
-	var prSweepLength; // sweep length used internally, = sweepLength * dirFlag
+	var <dirFlag; // changes with direction: cw=1, ccw=-1
+	var <prStartAngle; // start angle used internally, reference 0 to the RIGHT, as used in addAnnularWedge
+	var <prSweepLength; // sweep length used internally, = sweepLength * dirFlag
 	var moveRelative = true;  // false means value jumps to click, TODO: disabled for infinite movement
-	var prCenterAngle, centerNorm, bipolar, centerValue, colorValBelow;
+	var <prCenterAngle, <centerNorm, <bipolar, <centerValue, <colorValBelow;
 	// var <view; // master view:
 
 	// user view dimension vars used by the drawing classes
-	var bnds, cen, radius, innerRadius, wedgeWidth;
+	var <bnds, <cen, <radius, <innerRadius, <wedgeWidth;
 	var stValue, stInput;
-	var levelSweep;
+	var <levelSweepLength;
 
 	var mDownPnt;
+
+	// drawing layers
+	var range, level, text, ticks, handle;
 
 	*new { arg parent, bounds, spec, innerRadiusRatio, startAngle=0, sweepLength=2pi;
 		^super.new(parent, bounds).init(spec, innerRadiusRatio, startAngle, sweepLength)
@@ -122,12 +130,12 @@ Rotary : View {
 		baseProperties.postln;
 
 
-		#range, level, text, tick, handle = [
+		#range, level, text, ticks, handle = [
 			RotaryRangeLayer, RotaryLevelLayer, RotaryTextLayer, RotaryTickLayer, RotaryHandleLayer
 		].collect({
 			|class|
 			class.new(this, class.properties.parent_(baseProperties))
-		})
+		});
 
 		levelFollowsValue = true;
 		innerRadiusRatio = argInnerRadiusRatio ?? {0};
@@ -140,7 +148,7 @@ Rotary : View {
 		wrap = false;
 		clickMode = \relative; // or \absolute, in which case value snaps to where mouse clicks
 		boarderPx = 1;
-		boarderPad = /boarderPx;
+		boarderPad = boarderPx;
 
 		bipolar = false;
 		centerValue = spec.minval+spec.range.half;
@@ -185,10 +193,10 @@ Rotary : View {
 		//
 		// // ticks
 		// showTicks = false;
-		// majTicks = [];
-		// minTicks = [];
-		// majTickVals = [];
-		// minTickVals = [];
+		majTicks = [];
+		minTicks = [];
+		majTickVals = [];
+		minTickVals = [];
 		// majorTickRatio = 0.25;
 		// minorTickRatio = 0.15;
 		// tickAlign = \outside;
@@ -223,10 +231,22 @@ Rotary : View {
 		)
 	}
 
+	// user can overwrite to define a custom order
+	composeDrawOrder {
+		// order of drawing here is important for proper layering
+		if (range.p.fill) {range.fill};
+		if (level.p.fill) {level.fill};
+		if (ticks.p.show) {ticks.fill; ticks.stroke};
+		if (range.p.stroke) {range.stroke};
+		if (level.p.stroke) {level.stroke};
+		if (handle.p.show) {handle.fill; handle.stroke};
+		if (text.p.show) {text.fill; text.stroke};
+	}
+
 	// DRAW
 	defineDrawFunc {
 
-		var drRange, drLevel, drTicks, drRangeStroke, drHandle, drValueTxt, drLocalTicks, drWedgeStroke, drHanLine, drHanOval;
+		// var drRange, drLevel, drTicks, drRangeStroke, drHandle, drValueTxt, drLocalTicks, drWedgeStroke, drHanLine, drHanOval;
 
 		rotaryUserView.drawFunc_({|v|
 			var in;
@@ -235,19 +255,16 @@ Rotary : View {
 			cen  = bnds.center;
 			radius = min(cen.x, cen.y) - boarderPad;
 			innerRadius = radius*innerRadiusRatio;
+			[
+				bnds,
+				cen,
+				radius,
+				innerRadius].do(_.postln);
 
-			in = (levelFollowsValue.if({input},{levelInput});
+			in = if (levelFollowsValue) {input} {levelInput};
 			levelSweepLength = if (bipolar,{in - centerNorm},{in}) * prSweepLength;
 
-			// order of drawing here is important for proper layering
-			if (range.p.fill) {range.fill};
-			if (level.p.fill) {level.fill};
-			// if (showLevel and: strokeLevel) {drLevel.(\stroke)};
-			if (showTicks) {drTicks.()};
-			if (range.p.stroke) {range.stroke};
-			if (level.p.stroke) {level.stroke};
-			if (handle.p.show) {handle.draw};
-			if (showValue) {drValueTxt.()};
+			this.composeDrawOrder;
 			// // order of drawing here is important for proper layering
 			// if (fillRange) {drRange.()};
 			// if (showLevel and: fillLevel) {drLevel.(\fill)};
@@ -260,175 +277,175 @@ Rotary : View {
 
 		});
 
-		drRange = {
-			Pen.fillColor_(rangeFillColor);
-			Pen.addAnnularWedge(cen, innerRad, radius, prStartAngle, prSweepLength);
-			Pen.fill;
-		};
-
-		drLevel = { |fillOrStroke|
-			var swLen, col;
-
-			swLen = if (bipolar) {
-				prSweepLength * (levelFollowsValue.if({input},{levelInput}) - centerNorm);
-			} {
-				prSweepLength * levelFollowsValue.if({input},{levelInput});
-			};
-			Pen.push;
-			switch (fillOrStroke,
-				\fill, {
-					col = levelFillColor;
-					if (bipolar and: (input<centerNorm)) {
-						col = Color.hsv(*col.asHSV * [1,1,colorValBelow, 1]);
-					};
-					Pen.fillColor_(col);
-					Pen.addAnnularWedge(cen, innerRad, radius, if (bipolar, {prCenterAngle}, {prStartAngle}), swLen);
-					Pen.fill;
-				},
-				\stroke, {
-					col = levelStrokeColor;
-					if (bipolar and: (input<centerNorm)) {
-						col = Color.hsv(*col.asHSV * [1,1,colorValBelow, 1]);
-					};
-					Pen.strokeColor_(col);
-					Pen.width_(levelStrokeWidth);
-					drWedgeStroke.(levelStroke, levelStrokeWidth, if (bipolar, {prCenterAngle}, {prStartAngle}), swLen);
-					Pen.stroke;
-				}
-			);
-			Pen.pop;
-		};
-
-		drTicks = {
-			Pen.push;
-			Pen.translate(cen.x, cen.y);
-			Pen.rotate(prStartAngle);
-			drLocalTicks.(majTicks, majorTickRatio, majorTickWidth);
-			drLocalTicks.(minTicks, minorTickRatio, minorTickWidth);
-			Pen.pop;
-		};
-
-		drHandle = {
-			Pen.push;
-			Pen.translate(cen.x, cen.y);
-			switch (handleType,
-				\line, {drHanLine.()},
-				\circle, {drHanOval.()},
-				\lineAndCircle, {Pen.push; drHanLine.(); Pen.pop; drHanOval.()}
-			);
-			Pen.pop;
-		};
-
-		drRangeStroke = {
-			Pen.push;
-			Pen.strokeColor_(rangeStrokeColor);
-			Pen.width_(rangeStrokeWidth);
-			drWedgeStroke.(rangeStroke, rangeStrokeWidth, prStartAngle, prSweepLength);
-			Pen.stroke;
-			Pen.pop;
-		};
-
-		drValueTxt = {
-			var v, r, half;
-			v = value.round(round).asString;
-			Pen.push;
-			Pen.fillColor_(valueFontColor);
-			if (valueAlign.isKindOf(Point)) {
-				r = bnds.center_(bnds.extent*valueAlign);
-				Pen.stringCenteredIn(v, r, valueFont, valueFontColor);
-			} {
-				r = switch (valueAlign,
-					\center, {bnds},
-					\left, {bnds.width_(bnds.width*0.5)},
-					\right, {
-						half = bnds.width*0.5;
-						bnds.width_(half).left_(half);
-					},
-					\top, {bnds.height_(bnds.height*0.5)},
-					\bottom, {
-						half = bnds.height*0.5;
-						bnds.height_(half).top_(half)
-					},
-				);
-				Pen.stringCenteredIn(v, r, valueFont, valueFontColor)
-			};
-			Pen.fill;
-			Pen.pop;
-		};
-
-		// helper
-		drLocalTicks = {|ticks, tickRatio, strokeWidth|
-			var penSt, penEnd;
-			penSt = switch (tickAlign,
-				\inside, {innerRad},
-				\outside, {radius},
-				\center, {innerRad + (wedgeWidth - (wedgeWidth * tickRatio) * 0.5)},
-				{radius} // default to outside
-			);
-
-			penEnd = if (tickAlign == \outside) {
-				penSt - (wedgeWidth * tickRatio)
-			} { // \inside or \center
-				penSt + (wedgeWidth * tickRatio)
-			};
-
-			Pen.push;
-			Pen.strokeColor_(tickColor ?? rangeStrokeColor);
-			ticks.do{|tickRad|
-				Pen.width_(strokeWidth);
-				Pen.moveTo(penSt@0);
-				Pen.push;
-				Pen.lineTo(penEnd@0);
-				Pen.rotate(tickRad * dirFlag);
-				Pen.stroke;
-				Pen.pop;
-			};
-			Pen.pop;
-		};
-
-		// helper
-		drWedgeStroke = {|borderType, strokeWidth, stAng, swLength|
-			var inset;
-			inset = strokeWidth*0.5;
-			switch (borderType,
-				\around, {
-					Pen.addAnnularWedge(cen, innerRad, radius-inset, stAng, swLength);
-				},
-				\inside, {
-					Pen.addArc(cen, innerRad+inset, stAng, swLength);
-				},
-				\outside, {
-					Pen.addArc(cen, radius-inset, stAng, swLength);
-				},
-				\insideOutside, {
-					Pen.addArc(cen, innerRad+inset, stAng, swLength);
-					Pen.addArc(cen, radius-inset, stAng, swLength);
-				},
-			);
-		};
-
-		drHanLine = {
-			Pen.width_(handleWidth);
-			Pen.strokeColor_(handleColor);
-			Pen.moveTo(innerRad@0);
-			Pen.lineTo(radius@0);
-			Pen.rotate(prStartAngle+(prSweepLength*input));
-			Pen.stroke;
-		};
-
-		drHanOval = {
-			var d, r;
-			d = handleRadius*2;
-			r = Size(d, d).asRect;
-			Pen.fillColor_(handleColor);
-			switch (handleAlign,
-				\inside, {r = r.center_(innerRad@0)},
-				\outside, {r = r.center_(radius@0)},
-				\center, {r = r.center_((wedgeWidth*0.5+innerRad)@0)},
-			);
-			Pen.rotate(prStartAngle+(prSweepLength*input));
-			Pen.fillOval(r);
-		};
+			// drRange = {
+			// 	Pen.fillColor_(rangeFillColor);
+			// 	Pen.addAnnularWedge(cen, innerRad, radius, prStartAngle, prSweepLength);
+			// 	Pen.fill;
+			// };
+			//
+			// drLevel = { |fillOrStroke|
+			// 	var swLen, col;
+			//
+			// 	swLen = if (bipolar) {
+			// 		prSweepLength * (levelFollowsValue.if({input},{levelInput}) - centerNorm);
+			// 	} {
+			// 		prSweepLength * levelFollowsValue.if({input},{levelInput});
+			// 	};
+			// 	Pen.push;
+			// 	switch (fillOrStroke,
+			// 		\fill, {
+			// 			col = levelFillColor;
+			// 			if (bipolar and: (input<centerNorm)) {
+			// 				col = Color.hsv(*col.asHSV * [1,1,colorValBelow, 1]);
+			// 			};
+			// 			Pen.fillColor_(col);
+			// 			Pen.addAnnularWedge(cen, innerRad, radius, if (bipolar, {prCenterAngle}, {prStartAngle}), swLen);
+			// 			Pen.fill;
+			// 		},
+			// 		\stroke, {
+			// 			col = levelStrokeColor;
+			// 			if (bipolar and: (input<centerNorm)) {
+			// 				col = Color.hsv(*col.asHSV * [1,1,colorValBelow, 1]);
+			// 			};
+			// 			Pen.strokeColor_(col);
+			// 			Pen.width_(levelStrokeWidth);
+			// 			drWedgeStroke.(levelStroke, levelStrokeWidth, if (bipolar, {prCenterAngle}, {prStartAngle}), swLen);
+			// 			Pen.stroke;
+			// 		}
+			// 	);
+			// 	Pen.pop;
+			// };
+			//
+			// drTicks = {
+			// 	Pen.push;
+			// 	Pen.translate(cen.x, cen.y);
+			// 	Pen.rotate(prStartAngle);
+			// 	drLocalTicks.(majTicks, majorTickRatio, majorTickWidth);
+			// 	drLocalTicks.(minTicks, minorTickRatio, minorTickWidth);
+			// 	Pen.pop;
+			// };
+			//
+			// drHandle = {
+			// 	Pen.push;
+			// 	Pen.translate(cen.x, cen.y);
+			// 	switch (handleType,
+			// 		\line, {drHanLine.()},
+			// 		\circle, {drHanOval.()},
+			// 		\lineAndCircle, {Pen.push; drHanLine.(); Pen.pop; drHanOval.()}
+			// 	);
+			// 	Pen.pop;
+			// };
+			//
+			// drRangeStroke = {
+			// 	Pen.push;
+			// 	Pen.strokeColor_(rangeStrokeColor);
+			// 	Pen.width_(rangeStrokeWidth);
+			// 	drWedgeStroke.(rangeStroke, rangeStrokeWidth, prStartAngle, prSweepLength);
+			// 	Pen.stroke;
+			// 	Pen.pop;
+			// };
+			//
+			// drValueTxt = {
+			// 	var v, r, half;
+			// 	v = value.round(round).asString;
+			// 	Pen.push;
+			// 	Pen.fillColor_(valueFontColor);
+			// 	if (valueAlign.isKindOf(Point)) {
+			// 		r = bnds.center_(bnds.extent*valueAlign);
+			// 		Pen.stringCenteredIn(v, r, valueFont, valueFontColor);
+			// 	} {
+			// 		r = switch (valueAlign,
+			// 			\center, {bnds},
+			// 			\left, {bnds.width_(bnds.width*0.5)},
+			// 			\right, {
+			// 				half = bnds.width*0.5;
+			// 				bnds.width_(half).left_(half);
+			// 			},
+			// 			\top, {bnds.height_(bnds.height*0.5)},
+			// 			\bottom, {
+			// 				half = bnds.height*0.5;
+			// 				bnds.height_(half).top_(half)
+			// 			},
+			// 		);
+			// 		Pen.stringCenteredIn(v, r, valueFont, valueFontColor)
+			// 	};
+			// 	Pen.fill;
+			// 	Pen.pop;
+			// };
+			//
+			// // helper
+			// drLocalTicks = {|ticks, tickRatio, strokeWidth|
+			// 	var penSt, penEnd;
+			// 	penSt = switch (tickAlign,
+			// 		\inside, {innerRad},
+			// 		\outside, {radius},
+			// 		\center, {innerRad + (wedgeWidth - (wedgeWidth * tickRatio) * 0.5)},
+			// 		{radius} // default to outside
+			// 	);
+			//
+			// 	penEnd = if (tickAlign == \outside) {
+			// 		penSt - (wedgeWidth * tickRatio)
+			// 	} { // \inside or \center
+			// 		penSt + (wedgeWidth * tickRatio)
+			// 	};
+			//
+			// 	Pen.push;
+			// 	Pen.strokeColor_(tickColor ?? rangeStrokeColor);
+			// 	ticks.do{|tickRad|
+			// 		Pen.width_(strokeWidth);
+			// 		Pen.moveTo(penSt@0);
+			// 		Pen.push;
+			// 		Pen.lineTo(penEnd@0);
+			// 		Pen.rotate(tickRad * dirFlag);
+			// 		Pen.stroke;
+			// 		Pen.pop;
+			// 	};
+			// 	Pen.pop;
+			// };
+			//
+			// // helper
+			// drWedgeStroke = {|borderType, strokeWidth, stAng, swLength|
+			// 	var inset;
+			// 	inset = strokeWidth*0.5;
+			// 	switch (borderType,
+			// 		\around, {
+			// 			Pen.addAnnularWedge(cen, innerRad, radius-inset, stAng, swLength);
+			// 		},
+			// 		\inside, {
+			// 			Pen.addArc(cen, innerRad+inset, stAng, swLength);
+			// 		},
+			// 		\outside, {
+			// 			Pen.addArc(cen, radius-inset, stAng, swLength);
+			// 		},
+			// 		\insideOutside, {
+			// 			Pen.addArc(cen, innerRad+inset, stAng, swLength);
+			// 			Pen.addArc(cen, radius-inset, stAng, swLength);
+			// 		},
+			// 	);
+			// };
+			//
+			// drHanLine = {
+			// 	Pen.width_(handleWidth);
+			// 	Pen.strokeColor_(handleColor);
+			// 	Pen.moveTo(innerRad@0);
+			// 	Pen.lineTo(radius@0);
+			// 	Pen.rotate(prStartAngle+(prSweepLength*input));
+			// 	Pen.stroke;
+			// };
+			//
+			// drHanOval = {
+			// 	var d, r;
+			// 	d = handleRadius*2;
+			// 	r = Size(d, d).asRect;
+			// 	Pen.fillColor_(handleColor);
+			// 	switch (handleAlign,
+			// 		\inside, {r = r.center_(innerRad@0)},
+			// 		\outside, {r = r.center_(radius@0)},
+			// 		\center, {r = r.center_((wedgeWidth*0.5+innerRad)@0)},
+			// 	);
+			// 	Pen.rotate(prStartAngle+(prSweepLength*input));
+			// 	Pen.fillOval(r);
+			// };
 	}
 
 	// INTERACT
