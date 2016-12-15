@@ -75,7 +75,7 @@ Rotary : View {
 	// user view dimension vars used by the drawing classes
 	var bnds, cen, radius, innerRadius, wedgeWidth;
 	var stValue, stInput;
-
+	var levelSweep;
 
 	var mDownPnt;
 
@@ -229,12 +229,15 @@ Rotary : View {
 		var drRange, drLevel, drTicks, drRangeStroke, drHandle, drValueTxt, drLocalTicks, drWedgeStroke, drHanLine, drHanOval;
 
 		rotaryUserView.drawFunc_({|v|
-
+			var in;
 			// "global" instance vars
 			bnds = v.bounds;
 			cen  = bnds.center;
 			radius = min(cen.x, cen.y) - boarderPad;
 			innerRadius = radius*innerRadiusRatio;
+
+			in = (levelFollowsValue.if({input},{levelInput});
+			levelSweepLength = if (bipolar,{in - centerNorm},{in}) * prSweepLength;
 
 			// order of drawing here is important for proper layering
 			if (range.p.fill) {range.fill};

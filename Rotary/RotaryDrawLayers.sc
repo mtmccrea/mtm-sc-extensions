@@ -62,88 +62,57 @@ RotaryLevelLayer : RotaryLayer {
 	}
 
 	fill {
-		var swLen, stAngle, col, inset;
-
-		swLen = if (r.bipolar) {
-			r.prSweepLength * (r.levelFollowsValue.if({r.input},{r.levelInput}) - r.centerNorm);
-		} {
-			r.prSweepLength * r.levelFollowsValue.if({r.input},{r.levelInput});
-		};
-
-		stAngle = if (r.bipolar, {r.prCenterAngle}, {r.prStartAngle});
+		var stAngle, col, inset;
 
 		Pen.push;
-		switch (fillOrStroke,
-			\fill, {
-				col = p.levelFillColor;
-				if (r.bipolar and: (r.input<r.centerNorm)) {
-					col = Color.hsv(*col.asHSV * [1,1,p.colorValBelow, 1]);
-				};
-				Pen.fillColor_(col);
-				Pen.addAnnularWedge(r.cen, r.innerRadius, r.radius, stAngle, swLen);
-				Pen.fill;
-			},
-			\stroke, {
-				col = p.levelStrokeColor;
-				if (r.bipolar and: (r.input<r.centerNorm)) {
-					col = Color.hsv(*col.asHSV * [1,1,p.colorValBelow, 1]);
-				};
-				Pen.strokeColor_(col);
-				Pen.width_(p.levelStrokeWidth);
-				inset = p.strokeWidth*0.5;
-				switch (p.strokeType,
-					\around, {
-						Pen.addAnnularWedge(r.cen, r.innerRadius, r.radius-inset, stAngle, swLen);
-					},
-					\inside, {
-						Pen.addArc(r.cen, r.innerRadius+inset, stAngle, swLen);
-					},
-					\outside, {
-						Pen.addArc(r.cen, r.radius-inset, stAngle, swLen);
-					},
-					\insideOutside, {
-						Pen.addArc(r.cen, r.innerRadius+inset, stAngle, swLen);
-						Pen.addArc(r.cen, r.radius-inset, stAngle, swLen);
-					},
-				);
-				Pen.stroke;
-			}
-		);
+		col = p.levelFillColor;
+		if (r.bipolar) {
+			stAngle = r.prCenterAngle;
+			if (r.input<r.centerNorm) {
+				col = Color.hsv(*col.asHSV * [1,1,p.colorValBelow, 1]);
+			};
+		} {
+			stAngle = r.prStartAngle;
+		};
+		Pen.fillColor_(col);
+		Pen.addAnnularWedge(r.cen, r.innerRadius, r.radius, stAngle, r.levelSweepLength);
+		Pen.fill;
 		Pen.pop;
 	}
 
 	stroke {
-		var swLen, col;
+		var stAngle, col, inset;
 
-			swLen = if (bipolar) {
-				prSweepLength * (levelFollowsValue.if({input},{levelInput}) - centerNorm);
-			} {
-				prSweepLength * levelFollowsValue.if({input},{levelInput});
+		Pen.push;
+		col = p.levelStrokeColor;
+		if (r.bipolar) {
+			stAngle = r.prCenterAngle;
+			if (r.input<r.centerNorm) {
+				col = Color.hsv(*col.asHSV * [1,1,p.colorValBelow, 1]);
 			};
-			Pen.push;
-			switch (fillOrStroke,
-				\fill, {
-					col = levelFillColor;
-					if (bipolar and: (input<centerNorm)) {
-						col = Color.hsv(*col.asHSV * [1,1,colorValBelow, 1]);
-					};
-					Pen.fillColor_(col);
-					Pen.addAnnularWedge(cen, innerRadius, radius, if (bipolar, {prCenterAngle}, {prStartAngle}), swLen);
-					Pen.fill;
-				},
-				\stroke, {
-					col = levelStrokeColor;
-					if (bipolar and: (input<centerNorm)) {
-						col = Color.hsv(*col.asHSV * [1,1,colorValBelow, 1]);
-					};
-					Pen.strokeColor_(col);
-					Pen.width_(levelStrokeWidth);
-					drWedgeStroke.(levelStroke, levelStrokeWidth, if (bipolar, {prCenterAngle}, {prStartAngle}), swLen);
-					Pen.stroke;
-				}
-			);
-			Pen.pop;
-
+		} {
+			stAngle = r.prStartAngle;
+		};
+		Pen.strokeColor_(col);
+		Pen.width_(p.levelStrokeWidth);
+		inset = p.strokeWidth*0.5;
+		switch (p.strokeType,
+			\around, {
+				Pen.addAnnularWedge(r.cen, r.innerRadius, r.radius-inset, stAngle, r.levelSweepLength);
+			},
+			\inside, {
+				Pen.addArc(r.cen, r.innerRadius+inset, stAngle, r.levelSweepLength);
+			},
+			\outside, {
+				Pen.addArc(r.cen, r.radius-inset, stAngle, r.levelSweepLength);
+			},
+			\insideOutside, {
+				Pen.addArc(r.cen, r.innerRadius+inset, stAngle, r.levelSweepLength);
+				Pen.addArc(r.cen, r.radius-inset, stAngle, r.levelSweepLength);
+			},
+		);
+		Pen.stroke;
+		Pen.pop;
 	}
 }
 
@@ -194,12 +163,12 @@ RotaryTickLayer {
 
 	*properties {
 		^(
-			showHandle: true,
-			handleColor: Color.red,
-			handleWidth: 2,
-			handleRadius: 3,
-			handleAlign: \outside,
-			handleType: \line,
+			show:	true,
+			color:	Color.red,
+			width:	2,
+			radius:	3,
+			align:	\outside,
+			type:	\line,
 		)
 	}
 
