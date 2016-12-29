@@ -43,6 +43,8 @@ r.wrap =true
 line
 
 
+r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.1).front;
+
 (
 // continuous/wrapping knob
 r = Rotary(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.4).front;

@@ -232,7 +232,7 @@ Rotary : View {
 	}
 
 	// user can overwrite to define a custom order
-	composeDrawOrder {
+	drawInThisOrder {
 		// order of drawing here is important for proper layering
 		if (range.p.fill) {range.fill};
 		if (level.p.fill) {level.fill};
@@ -255,16 +255,11 @@ Rotary : View {
 			cen  = bnds.center;
 			radius = min(cen.x, cen.y) - boarderPad;
 			innerRadius = radius*innerRadiusRatio;
-			[
-				bnds,
-				cen,
-				radius,
-				innerRadius].do(_.postln);
 
 			in = if (levelFollowsValue) {input} {levelInput};
 			levelSweepLength = if (bipolar,{in - centerNorm},{in}) * prSweepLength;
 
-			this.composeDrawOrder;
+			this.drawInThisOrder;
 			// // order of drawing here is important for proper layering
 			// if (fillRange) {drRange.()};
 			// if (showLevel and: fillLevel) {drLevel.(\fill)};

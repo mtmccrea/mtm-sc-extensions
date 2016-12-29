@@ -1,10 +1,13 @@
-RotaryLayer {
-	var r, <>p; // properties
+ValueViewLayer {
+	var view, <>p; // properties
 
-	*new { |rotary, initProperties| ^super.newCopyArgs(rotary, initProperties) }
+	*new { |valueView, initProperties| ^super.newCopyArgs(valueView, initProperties) }
+
+	properties {^p}
 }
 
-RotaryRangeLayer : RotaryLayer {
+RotaryRangeLayer : ValueViewLayer {
+	// define default properties in an Event as a class method
 	*properties {
 		^(
 			fill:		 true,
@@ -16,9 +19,11 @@ RotaryRangeLayer : RotaryLayer {
 		)
 	}
 
+	// access properties with instance variable 'p'
+	// access valueView variables with instance variable 'view'
 	fill {
 		Pen.fillColor_(p.fillColor);
-		Pen.addAnnularWedge(r.cen, r.innerRadius, r.radius, r.prStartAngle, r.prSweepLength);
+		Pen.addAnnularWedge(view.cen, view.innerRadius, view.radius, view.prStartAngle, view.prSweepLength);
 		Pen.fill;
 	}
 
@@ -30,17 +35,17 @@ RotaryRangeLayer : RotaryLayer {
 		inset = p.strokeWidth*0.5;
 		switch (p.strokeType,
 			\around, {
-				Pen.addAnnularWedge(r.cen, r.innerRadius, r.radius-inset, r.prStartAngle, r.prSweepLength);
+				Pen.addAnnularWedge(view.cen, view.innerRadius, view.radius-inset, view.prStartAngle, view.prSweepLength);
 			},
 			\inside, {
-				Pen.addArc(r.cen, r.innerRadius+inset, r.prStartAngle, r.prSweepLength);
+				Pen.addArc(view.cen, view.innerRadius+inset, view.prStartAngle, view.prSweepLength);
 			},
 			\outside, {
-				Pen.addArc(r.cen, r.radius-inset, r.prStartAngle, r.prSweepLength);
+				Pen.addArc(view.cen, view.radius-inset, view.prStartAngle, view.prSweepLength);
 			},
 			\insideOutside, {
-				Pen.addArc(r.cen, r.innerRadius+inset, r.prStartAngle, r.prSweepLength);
-				Pen.addArc(r.cen, r.radius-inset, r.prStartAngle, r.prSweepLength);
+				Pen.addArc(view.cen, view.innerRadius+inset, view.prStartAngle, view.prSweepLength);
+				Pen.addArc(view.cen, view.radius-inset, view.prStartAngle, view.prSweepLength);
 			},
 		);
 		Pen.stroke;
@@ -48,7 +53,7 @@ RotaryRangeLayer : RotaryLayer {
 	}
 }
 
-RotaryLevelLayer : RotaryLayer {
+RotaryLevelLayer : ValueViewLayer {
 
 	*properties {
 		^(
@@ -66,16 +71,16 @@ RotaryLevelLayer : RotaryLayer {
 
 		Pen.push;
 		col = p.fillColor;
-		if (r.bipolar) {
-			stAngle = r.prCenterAngle;
-			if (r.input<r.centerNorm) {
-				col = Color.hsv(*col.asHSV * [1,1,r.colorValBelow, 1]);
+		if (view.bipolar) {
+			stAngle = view.prCenterAngle;
+			if (view.input<view.centerNorm) {
+				col = Color.hsv(*col.asHSV * [1,1,view.colorValBelow, 1]);
 			};
 		} {
-			stAngle = r.prStartAngle;
+			stAngle = view.prStartAngle;
 		};
 		Pen.fillColor_(col);
-		Pen.addAnnularWedge(r.cen, r.innerRadius, r.radius, stAngle, r.levelSweepLength);
+		Pen.addAnnularWedge(view.cen, view.innerRadius, view.radius, stAngle, view.levelSweepLength);
 		Pen.fill;
 		Pen.pop;
 	}
@@ -85,30 +90,30 @@ RotaryLevelLayer : RotaryLayer {
 
 		Pen.push;
 		col = p.strokeColor;
-		if (r.bipolar) {
-			stAngle = r.prCenterAngle;
-			if (r.input<r.centerNorm) {
+		if (view.bipolar) {
+			stAngle = view.prCenterAngle;
+			if (view.input<view.centerNorm) {
 				col = Color.hsv(*col.asHSV * [1,1,p.colorValBelow, 1]);
 			};
 		} {
-			stAngle = r.prStartAngle;
+			stAngle = view.prStartAngle;
 		};
 		Pen.strokeColor_(col);
 		Pen.width_(p.strokeWidth);
 		inset = p.strokeWidth*0.5;
 		switch (p.strokeType,
 			\around, {
-				Pen.addAnnularWedge(r.cen, r.innerRadius, r.radius-inset, stAngle, r.levelSweepLength);
+				Pen.addAnnularWedge(view.cen, view.innerRadius, view.radius-inset, stAngle, view.levelSweepLength);
 			},
 			\inside, {
-				Pen.addArc(r.cen, r.innerRadius+inset, stAngle, r.levelSweepLength);
+				Pen.addArc(view.cen, view.innerRadius+inset, stAngle, view.levelSweepLength);
 			},
 			\outside, {
-				Pen.addArc(r.cen, r.radius-inset, stAngle, r.levelSweepLength);
+				Pen.addArc(view.cen, view.radius-inset, stAngle, view.levelSweepLength);
 			},
 			\insideOutside, {
-				Pen.addArc(r.cen, r.innerRadius+inset, stAngle, r.levelSweepLength);
-				Pen.addArc(r.cen, r.radius-inset, stAngle, r.levelSweepLength);
+				Pen.addArc(view.cen, view.innerRadius+inset, stAngle, view.levelSweepLength);
+				Pen.addArc(view.cen, view.radius-inset, stAngle, view.levelSweepLength);
 			},
 		);
 		Pen.stroke;
@@ -116,7 +121,7 @@ RotaryLevelLayer : RotaryLayer {
 	}
 }
 
-RotaryTextLayer : RotaryLayer {
+RotaryTextLayer : ValueViewLayer {
 
 	*properties {
 		^(
@@ -131,8 +136,8 @@ RotaryTextLayer : RotaryLayer {
 
 	fill {
 		var v, bnds, rect, half;
-		v = r.value.round(p.round).asString;
-		bnds = r.bnds;
+		v = view.value.round(p.round).asString;
+		bnds = view.bnds;
 		Pen.push;
 		Pen.fillColor_(p.fontColor);
 		if (p.align.isKindOf(Point)) {
@@ -161,7 +166,7 @@ RotaryTextLayer : RotaryLayer {
 	stroke {}
 }
 
-RotaryTickLayer : RotaryLayer {
+RotaryTickLayer : ValueViewLayer {
 
 	*properties {
 		^(
@@ -183,26 +188,26 @@ RotaryTickLayer : RotaryLayer {
 
 	stroke {
 		Pen.push;
-		Pen.translate(r.cen.x, r.cen.y);
-		Pen.rotate(r.prStartAngle);
-		this.drawTicks(r.majTicks, p.majorTickRatio, p.majorTickWidth);
-		this.drawTicks(r.minTicks, p.minorTickRatio, p.minorTickWidth);
+		Pen.translate(view.cen.x, view.cen.y);
+		Pen.rotate(view.prStartAngle);
+		this.drawTicks(view.majTicks, p.majorTickRatio, p.majorTickWidth);
+		this.drawTicks(view.minTicks, p.minorTickRatio, p.minorTickWidth);
 		Pen.pop;
 	}
 
 	drawTicks {|ticks, tickRatio, strokeWidth|
 		var penSt, penEnd;
 		penSt = switch (p.align,
-			\inside, {r.innerRadius},
-			\outside, {r.radius},
-			\center, {r.innerRadius + (r.wedgeWidth - (r.wedgeWidth * tickRatio) * 0.5)},
-			{r.radius} // default to outside
+			\inside, {view.innerRadius},
+			\outside, {view.radius},
+			\center, {view.innerRadius + (view.wedgeWidth - (view.wedgeWidth * tickRatio) * 0.5)},
+			{view.radius} // default to outside
 		);
 
 		penEnd = if (p.align == \outside) {
-			penSt - (r.wedgeWidth * tickRatio)
+			penSt - (view.wedgeWidth * tickRatio)
 		} { // \inside or \center
-			penSt + (r.wedgeWidth * tickRatio)
+			penSt + (view.wedgeWidth * tickRatio)
 		};
 
 		Pen.push;
@@ -212,7 +217,7 @@ RotaryTickLayer : RotaryLayer {
 			Pen.moveTo(penSt@0);
 			Pen.push;
 			Pen.lineTo(penEnd@0);
-			Pen.rotate(tickPos * r.dirFlag);
+			Pen.rotate(tickPos * view.dirFlag);
 			Pen.stroke;
 			Pen.pop;
 		};
@@ -220,7 +225,7 @@ RotaryTickLayer : RotaryLayer {
 	}
 }
 
-RotaryHandleLayer : RotaryLayer {
+RotaryHandleLayer : ValueViewLayer {
 
 	*properties {
 		^(
@@ -237,7 +242,7 @@ RotaryHandleLayer : RotaryLayer {
 
 	stroke {
 		var cen;
-		cen = r.cen;
+		cen = view.cen;
 		Pen.push;
 		Pen.translate(cen.x, cen.y);
 		switch (p.type,
@@ -251,9 +256,9 @@ RotaryHandleLayer : RotaryLayer {
 	drawLine {
 		Pen.width_(p.width);
 		Pen.strokeColor_(p.color);
-		Pen.moveTo(r.innerRadius@0);
-		Pen.lineTo(r.radius@0);
-		Pen.rotate(r.prStartAngle+(r.prSweepLength*r.input));
+		Pen.moveTo(view.innerRadius@0);
+		Pen.lineTo(view.radius@0);
+		Pen.rotate(view.prStartAngle+(view.prSweepLength*view.input));
 		Pen.stroke;
 	}
 
@@ -263,11 +268,11 @@ RotaryHandleLayer : RotaryLayer {
 		rect = Size(d, d).asRect;
 		Pen.fillColor_(p.color);
 		switch (p.align,
-			\inside, {rect = rect.center_(r.innerRadius@0)},
-			\outside, {rect = rect.center_(r.radius@0)},
-			\center, {rect = rect.center_((r.wedgeWidth*0.5+r.innerRadius)@0)},
+			\inside, {rect = rect.center_(view.innerRadius@0)},
+			\outside, {rect = rect.center_(view.radius@0)},
+			\center, {rect = rect.center_((view.wedgeWidth*0.5+view.innerRadius)@0)},
 		);
-		Pen.rotate(r.prStartAngle+(r.prSweepLength*r.input));
+		Pen.rotate(view.prStartAngle+(view.prSweepLength*view.input));
 		Pen.fillOval(rect);
 	}
 }
