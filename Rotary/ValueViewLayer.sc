@@ -1,7 +1,22 @@
 ValueViewLayer {
 	var view, <>p; // properties
 
-	*new { |valueView, initProperties| ^super.newCopyArgs(valueView, initProperties) }
+	*new { |valueView, initProperties|
+		^super.newCopyArgs(valueView, initProperties).register
+	}
+
+	register {
+		this.addDependant(view);
+	}
+
+	// catch setters and forward to setting properties
+	doesNotUnderstand {|selector, value|
+		var asGetter = selector.asGetter;
+		if (selector.isSetter && p[asGetter].notNil) {
+			p[asGetter] = value;
+			this.changed(\layerProperty, asGetter, value);
+		}
+	}
 
 	properties {^p}
 }

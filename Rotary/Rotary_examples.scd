@@ -44,7 +44,13 @@ line
 
 
 r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.1).front;
-
+r.range.fill = false
+r.range.fill = true
+r.onClose_({"closed".postln})
+r.onClose_({|what| postf("% closed", what)})
+r.close
+r.refresh
+r.range.p
 (
 // continuous/wrapping knob
 r = Rotary(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.4).front;

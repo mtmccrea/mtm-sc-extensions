@@ -11,6 +11,8 @@ ValueView : View {
 	var mouseDownPnt, mouseUpPnt, mouseMovePnt;
 	var <>mouseDownAction, <>mouseUpAction, <>mouseMoveAction;
 	var <>valuePerPixel;
+	var <layers; // array of drawing layers which respond to .properties
+	// var <notificationRegistrations;
 
 	*new { |parent, bounds, spec, initVal |
 		^super.new(parent, bounds).superInit(spec, initVal); //.init(*args)
@@ -43,7 +45,30 @@ ValueView : View {
 			mouseUpAction.(v,x,y)
 		});
 
+		// notificationRegistrations = List();
+
 		this.onResize_({userView.bounds_(this.bounds.origin_(0@0))});
+		this.onClose_({}); // set default onClose to removeDependants
+	}
+
+	// overwrite default View method to retain freeing dependants
+	onClose_ {|func|
+		var newFunc = {
+			|...args|
+			layers.do(_.removeDependant(this));
+			func.(*args)
+		};
+		// from View:onClose_
+		this.manageFunctionConnection( onClose, newFunc, 'destroyed()', false );
+		onClose = newFunc;
+	}
+
+	update { |changer, what ...args|
+		// refresh when layer properties change
+		if (what == \layerProperty) {
+			postf("heard % % change to %\n", what, args[0], args[1]);
+			this.refresh;
+		}
 	}
 
 	// init { this.subclassResponsibility(thisMethod) }
@@ -100,6 +125,7 @@ ValueView : View {
 	rangeInPixels_ { |px|
 		valuePerPixel = spec.range/px;
 	}
+
 }
 
 RotaryView : ValueView {
@@ -141,6 +167,8 @@ RotaryView : ValueView {
 			|class|
 			class.new(this, class.properties)
 		});
+
+		layers = [range, level, text, ticks, handle];
 
 		innerRadiusRatio = argInnerRadiusRatio ?? {0};
 		startAngle = argStartAngle; // reference 0 is UP
