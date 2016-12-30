@@ -42,21 +42,40 @@ r.handleType_(\circle)
 r.wrap =true
 line
 
-
+(
 r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.1).front;
-r.range.fill = false
-r.range.fill = true
-r.onClose_({"closed".postln})
-r.onClose_({|what| postf("% closed", what)})
-r.close
-r.refresh
-r.range.p
+
+r.innerRadiusRatio = 0.3;
+r.spec = [0, 360, \lin].asSpec;
+r.startAngle_(-0.0pi);
+r.sweepLength = 2pi;
+r.range.fillColor = Color.new(0.9,0.9,0.9);
+r.range.stroke = false;
+r.handle.show_(true).color_(Color.green);
+r.level.fill = false;
+r.level.stroke = false;
+r.text.fontSize = 36;
+r.text.align = 0.5@0.51;
+r.text.color = Color.red;
+r.ticks.show = true;
+r.numTicks_(12, 3, endTick: false);
+r.ticks.minorColor = Color.gray;
+r.ticks.majorColor = Color.red;
+r.ticks.align = \center;
+r.ticks.majorRatio = 0.6;
+r.action = {|val| val.postln};
+// r.action = nil;
+r.direction = \cw;
+r.wrap = true;
+r.text.round = 1;
+)
+
 (
 // continuous/wrapping knob
 r = Rotary(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.4).front;
 r.spec = [0, 360, \lin].asSpec;
-r.startAngle_(0.0pi);
-r.sweepLength = 2pi;
+r.startAngle_(0.5pi);
+r.sweepLength = 1pi;
 r.rangeFillColor = Color.new(0.9,0.9,0.9);
 r.strokeRange = false;
 r.showHandle_(true).handleColor_(Color.green);

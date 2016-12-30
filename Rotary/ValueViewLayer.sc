@@ -144,7 +144,7 @@ RotaryTextLayer : ValueViewLayer {
 			align: \center, // \top, \bottom, \center, \left, \right, or Point()
 			fontSize: 12,
 			font: {|me| Font("Helvetica", me.fontSize)},
-			fontColor: Color.black,
+			color: Color.black,
 			round: 0.1,
 		)
 	}
@@ -154,10 +154,10 @@ RotaryTextLayer : ValueViewLayer {
 		v = view.value.round(p.round).asString;
 		bnds = view.bnds;
 		Pen.push;
-		Pen.fillColor_(p.fontColor);
+		Pen.fillColor_(p.color);
 		if (p.align.isKindOf(Point)) {
 			rect = bnds.center_(bnds.extent*p.align);
-			Pen.stringCenteredIn(v, rect, p.font, p.fontColor);
+			Pen.stringCenteredIn(v, rect, p.font, p.color);
 		} {
 			rect = switch (p.align,
 				\center, {bnds},
@@ -172,7 +172,7 @@ RotaryTextLayer : ValueViewLayer {
 					bnds.height_(half).top_(half)
 				},
 			);
-			Pen.stringCenteredIn(v, rect, p.font, p.fontColor)
+			Pen.stringCenteredIn(v, rect, p.font, p.color)
 		};
 		Pen.fill;
 		Pen.pop;
@@ -190,12 +190,13 @@ RotaryTickLayer : ValueViewLayer {
 			// minTicks: [],
 			// majTickVals: [],
 			// minTickVals: [],
-			majorTickRatio: 0.25,
-			minorTickRatio: 0.15,
+			majorRatio: 0.25,
+			minorRatio: 0.15,
 			align: \outside,
-			majorTickWidth: 1,
-			minorTickWidth: 0.5,
-			tickColor: Color.gray;
+			majorWidth: 1,
+			minorWidth: 0.5,
+			majorColor: Color.black,
+			minorColor: Color.gray
 		)
 	}
 
@@ -205,12 +206,12 @@ RotaryTickLayer : ValueViewLayer {
 		Pen.push;
 		Pen.translate(view.cen.x, view.cen.y);
 		Pen.rotate(view.prStartAngle);
-		this.drawTicks(view.majTicks, p.majorTickRatio, p.majorTickWidth);
-		this.drawTicks(view.minTicks, p.minorTickRatio, p.minorTickWidth);
+		this.drawTicks(view.majTicks, p.majorRatio, p.majorWidth, p.majorColor);
+		this.drawTicks(view.minTicks, p.minorRatio, p.minorWidth, p.minorColor);
 		Pen.pop;
 	}
 
-	drawTicks {|ticks, tickRatio, strokeWidth|
+	drawTicks {|ticks, tickRatio, strokeWidth, color|
 		var penSt, penEnd;
 		penSt = switch (p.align,
 			\inside, {view.innerRadius},
@@ -226,7 +227,7 @@ RotaryTickLayer : ValueViewLayer {
 		};
 
 		Pen.push;
-		Pen.strokeColor_(p.tickColor);
+		Pen.strokeColor_(color);
 		ticks.do{|tickPos|
 			Pen.width_(strokeWidth);
 			Pen.moveTo(penSt@0);

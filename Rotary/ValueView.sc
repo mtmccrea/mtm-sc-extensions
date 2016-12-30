@@ -4,6 +4,7 @@
 
 // TODO: provide methods for common interaction calculations:
 // -distFromCenter, -
+// add arrow key increment/decrement
 
 ValueView : View {
 	var <spec, <value, <input, <action, <userView;
@@ -13,6 +14,7 @@ ValueView : View {
 	var <>valuePerPixel;
 	var <layers; // array of drawing layers which respond to .properties
 	// var <notificationRegistrations;
+	var <maxUpdateRate=25, updateWait, allowUpdate=true, updateHeld=false;
 
 	*new { |parent, bounds, spec, initVal |
 		^super.new(parent, bounds).superInit(spec, initVal); //.init(*args)
@@ -24,6 +26,7 @@ ValueView : View {
 		input = spec.unmap(value);
 		action = {};
 		valuePerPixel = spec.range / 200; // for interaction: movement range in pixels to cover full spec range
+		updateWait = maxUpdateRate.reciprocal;
 
 		userView = UserView(this, this.bounds.origin_(0@0)).resize_(5);
 		userView.drawFunc_(this.drawFunc);
@@ -66,7 +69,7 @@ ValueView : View {
 	update { |changer, what ...args|
 		// refresh when layer properties change
 		if (what == \layerProperty) {
-			postf("heard % % change to %\n", what, args[0], args[1]);
+			// postf("heard % % change to %\n", what, args[0], args[1]);
 			this.refresh;
 		}
 	}
@@ -76,7 +79,6 @@ ValueView : View {
 	drawFunc { this.subclassResponsibility(thisMethod) }
 
 	value_ {|val|
-
 		// TODO: should wrap option be default behavior?
 		// or should subclass add this via method overwrite
 		// as desired?
@@ -116,16 +118,38 @@ ValueView : View {
 	doAction {action.(value)}
 
 	spec_ {|controlSpec, updateValue=true|
+		var rangeInPx = spec.range/valuePerPixel; // get old pixels per range
 		spec = controlSpec;
-		updateValue.if{this.value_(value)};
+		this.rangeInPixels_(rangeInPx); // restore mouse scaling so it feels the same
+		updateValue.if{this.value_(value)}; // also updates input
 	}
 
-	refresh { userView.refresh }
+	// refresh { userView.refresh }
+	refresh {
+		if (allowUpdate) {
+			userView.refresh;
+			allowUpdate = false;
+			AppClock.sched(updateWait, {
+
+				if (updateHeld) {  // perform deferred refresh
+					userView.refresh;
+					updateHeld = false;
+				};
+				allowUpdate = true;
+			});
+		} {
+			updateHeld = true;
+		};
+	}
 
 	rangeInPixels_ { |px|
 		valuePerPixel = spec.range/px;
 	}
 
+	maxUpdateRate_ { |hz|
+		maxUpdateRate = hz;
+		updateWait = maxUpdateRate.reciprocal;
+	}
 }
 
 RotaryView : ValueView {
@@ -177,6 +201,7 @@ RotaryView : ValueView {
 		dirFlag = 1;
 		orientation = \vertical;
 		wrap = false;
+		// TODO
 		// clickMode = \relative; // or \absolute, in which case value snaps to where mouse clicks
 		boarderPx = 1;
 		boarderPad = boarderPx;
@@ -186,7 +211,7 @@ RotaryView : ValueView {
 		centerNorm = spec.unmap(centerValue);
 		colorValBelow = 0.65; // shift level color by this value below center
 
-		valuePerPixel = spec.range / 200; // for interaction: movement range in pixels to cover full spec range
+		// valuePerPixel = spec.range / 200; // for interaction: movement range in pixels to cover full spec range
 		// valuePerRadian = spec.range / sweepLength;
 
 		majTicks = [];
@@ -200,17 +225,13 @@ RotaryView : ValueView {
 
 	drawFunc {
 		^{|v|
-			// var in;
 			// "global" instance vars
 			bnds = v.bounds;
 			cen  = bnds.center;
 			radius = min(cen.x, cen.y) - boarderPad;
 			innerRadius = radius*innerRadiusRatio;
-
-			// in = if (levelFollowsValue) {input} {levelInput};
-			// levelSweepLength = if (bipolar,{in - centerNorm},{in}) * prSweepLength;
+			wedgeWidth = radius - innerRadius;
 			levelSweepLength = if (bipolar,{input - centerNorm},{input}) * prSweepLength;
-
 			this.drawInThisOrder;
 		}
 	}
@@ -409,9 +430,4 @@ RotaryView : ValueView {
 		ticks.do{|val, i| if ((i%majorEvery) == 0) {majList.add(val)} {minList.add(val)} };
 		this.ticksAt_(majList, minList);
 	}
-
-	// tickColor_ {|color|
-	// 	tickColor = color;
-	// 	this.refresh;
-	// }
 }
