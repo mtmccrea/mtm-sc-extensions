@@ -45,10 +45,10 @@ line
 (
 r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.1).front;
 
-r.step = 0.1
-r.scrollStepMul = 0.2
-r.arrowKeyStepMul = 1
-r.scrollDir = -1
+r.step = 0.1;
+r.scrollStepMul = 0.2;
+r.arrowKeyStepMul = 1;
+r.scrollDir = -1;
 
 
 r.innerRadiusRatio = 0.3;

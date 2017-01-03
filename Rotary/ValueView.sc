@@ -1,10 +1,9 @@
-// ValueView: a wrapper for UserView to make custom widgets
-// that hold a mapped 'value' and normalized 'input', and draws
-// custom layers in a UserView
+// ValueView: a wrapper to make custom widgets
+// that hold a mapped 'value' and normalized 'input',
+// and draws custom layers in a UserView, with mouse/arrow interaction
 
 // TODO: provide methods for common interaction calculations:
 // -distFromCenter, -
-// add arrow key increment/decrement
 
 ValueView : View {
 	var <spec, <value, <input, <action, <userView;
@@ -15,7 +14,7 @@ ValueView : View {
 	var <layers; // array of drawing layers which respond to .properties
 	// var <notificationRegistrations;
 	var <maxUpdateRate=25, updateWait, allowUpdate=true, updateHeld=false;
-	var <>step; 			// used for scrollWheel and arrow keys
+	var <step; 			// used for scrollWheel and arrow keys, initialized to spec.step
 	var <>arrowKeyStepMul=1;// scale step when arrow keys are pressed
 	var <>scrollStepMul=1;	// scale step when scroll wheel steps
 	var <>scrollDir= -1;	// change scroll direction, -1 or 1, -1 is "natural" scrolling on Mac
@@ -189,6 +188,11 @@ ValueView : View {
 	maxUpdateRate_ { |hz|
 		maxUpdateRate = hz;
 		updateWait = maxUpdateRate.reciprocal;
+	}
+
+	step_ {|stepVal|
+		step = stepVal;
+		spec.step_(step);
 	}
 }
 
