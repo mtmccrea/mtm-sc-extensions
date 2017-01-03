@@ -45,6 +45,12 @@ line
 (
 r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.1).front;
 
+r.step = 0.1
+r.scrollStepMul = 0.2
+r.arrowKeyStepMul = 1
+r.scrollDir = -1
+
+
 r.innerRadiusRatio = 0.3;
 r.spec = [0, 360, \lin].asSpec;
 r.startAngle_(-0.0pi);
@@ -69,7 +75,7 @@ r.direction = \cw;
 r.wrap = true;
 r.text.round = 1;
 )
-
+focus
 (
 // continuous/wrapping knob
 r = Rotary(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.4).front;
