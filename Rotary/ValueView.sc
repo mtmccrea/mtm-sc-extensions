@@ -4,6 +4,7 @@
 
 // TODO: provide methods for common interaction calculations:
 // -distFromCenter, -
+// test drawing properties as functions of value
 
 ValueView : View {
 	var <spec, <value, <input, <action, <userView;
@@ -199,7 +200,7 @@ ValueView : View {
 RotaryView : ValueView {
 
 	// variables to be use by this class which don't need getters
-	var innerRadiusRatio, boarderPx, boarderPad;
+	var innerRadiusRatio, boarderPx, <boarderPad;
 	var stValue, stInput; //, clickMode;
 
 	// create variables with getters which you want
@@ -247,8 +248,8 @@ RotaryView : ValueView {
 		wrap = false;
 		// TODO
 		// clickMode = \relative; // or \absolute, in which case value snaps to where mouse clicks
-		boarderPx = 1;
-		boarderPad = boarderPx;
+		boarderPad = 1;
+		boarderPx = boarderPad;
 
 		bipolar = false;
 		centerValue = spec.minval+spec.range.half;
@@ -272,7 +273,7 @@ RotaryView : ValueView {
 			// "global" instance vars
 			bnds = v.bounds;
 			cen  = bnds.center;
-			radius = min(cen.x, cen.y) - boarderPad;
+			radius = min(cen.x, cen.y) - boarderPx;
 			innerRadius = radius*innerRadiusRatio;
 			wedgeWidth = radius - innerRadius;
 			levelSweepLength = if (bipolar,{input - centerNorm},{input}) * prSweepLength;
@@ -390,6 +391,26 @@ RotaryView : ValueView {
 	bipolar_ {|bool|
 		bipolar = bool;
 		this.refresh;
+	}
+
+	boarderPad_ { |px|
+		var align, overhang, alignRadius;
+		align = handle.align;
+		boarderPad = px;
+		boarderPx = if (handle.type==\line)
+		{boarderPad}
+		{
+			if (align==\outside)
+			{boarderPx + handle.radius}
+			{
+				if (align.isKindOf(Number))
+				{
+					overhang = max(0, ((wedgeWidth * align) + (handle.radius)) - wedgeWidth);
+					overhang + boarderPad
+				}
+				{boarderPad}
+			}
+		};
 	}
 
 	/* Ticks */

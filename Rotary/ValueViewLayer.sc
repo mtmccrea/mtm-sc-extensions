@@ -12,10 +12,13 @@ ValueViewLayer {
 	// catch setters and forward to setting properties
 	doesNotUnderstand {|selector, value|
 		var asGetter = selector.asGetter;
-		if (selector.isSetter && p[asGetter].notNil) {
+
+		if (selector.isSetter and: p[asGetter].notNil) {
 			p[asGetter] = value;
 			this.changed(\layerProperty, asGetter, value);
-		}
+		} {
+			^p[selector];
+		};
 	}
 
 	properties {^p}
@@ -250,7 +253,10 @@ RotaryHandleLayer : ValueViewLayer {
 			width:	2,
 			radius:	3,
 			align:	\outside,
-			type:	\line,
+			type:	\line, // line, circle, lineAndCircle, arrow
+			arrowLengthRatio: 0.3,
+			arrowWLRatio: 0.5,
+			fillArrow: true
 		)
 	}
 
@@ -264,7 +270,8 @@ RotaryHandleLayer : ValueViewLayer {
 		switch (p.type,
 			\line, {this.drawLine},
 			\circle, {this.drawCircle},
-			\lineAndCircle, {Pen.push ; this.drawLine; Pen.pop; this.drawOval}
+			\lineAndCircle, {Pen.push ; this.drawLine; Pen.pop; this.drawCircle},
+			\arrow, {this.drawArrow}
 		);
 		Pen.pop;
 	}
@@ -287,8 +294,73 @@ RotaryHandleLayer : ValueViewLayer {
 			\inside, {rect = rect.center_(view.innerRadius@0)},
 			\outside, {rect = rect.center_(view.radius@0)},
 			\center, {rect = rect.center_((view.wedgeWidth*0.5+view.innerRadius)@0)},
+			// else assume align is a float 0>1
+			{rect = rect.center_((view.wedgeWidth*p.align+view.innerRadius)@0)}
 		);
 		Pen.rotate(view.prStartAngle+(view.prSweepLength*view.input));
 		Pen.fillOval(rect);
+	}
+
+	drawArrow {
+		var rect, w, h;
+		// Pen.push;
+		h = view.wedgeWidth * p.arrowLengthRatio;
+		w = h * p.arrowWLRatio;
+		rect = Size(h, w).asRect.center_(0@0); // note h<>w, rect starts at 3 o'clock
+
+		// define rect enclosing the arrow
+		// align determines location of the arrow's tip
+		rect = rect.right_(
+			switch (p.align,
+				\inside, {view.innerRadius},
+				\outside, {view.radius},
+				\center, {(view.wedgeWidth*0.5+view.innerRadius)},
+				{view.wedgeWidth*p.align+view.innerRadius}
+			)
+		);
+		rect.postln;
+
+		Pen.rotate(view.prStartAngle+(view.prSweepLength*view.input));
+
+		Pen.moveTo(rect.right@0);
+		// Pen.lineTo(100, 5);
+		// Pen.lineTo(100, -5);
+		Pen.lineTo(rect.leftBottom.postln);
+		Pen.lineTo(rect.leftTop.postln);
+		Pen.lineTo(rect.right@0);
+
+		if (p.fillArrow) {
+			Pen.fillColor_(p.color);
+			Pen.fill;
+		} {
+			Pen.strokeColor_(p.color);
+			Pen.stroke;
+		};
+
+		// Pen.pop;
+	}
+
+	// set properties which require update
+	// to view's boarder padding as necessary
+
+	radius_ {|px|
+		p.radius = px;
+		// update boarder pad
+		if (p.type !='line') {view.boarderPad=view.boarderPad};
+		view.refresh;
+	}
+
+	align_ {|where|
+		p.align = where;
+		// update boarder pad
+		if (p.type !='line') {view.boarderPad=view.boarderPad};
+		view.refresh;
+	}
+
+	type_ {|type|
+		p.type = type;
+		// update boarder pad
+		if (type !='line') {view.boarderPad=view.boarderPad};
+		view.refresh;
 	}
 }

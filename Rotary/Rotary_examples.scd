@@ -44,7 +44,12 @@ line
 
 (
 r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.1).front;
+r.handle.type = \arrow
 
+r.handle.fillArrow = false
+r.handle.fillArrow = true
+r.handle.arrowWLRatio = 1
+r.handle.align = 0.2
 r.step = 0.1;
 r.scrollStepMul = 0.2;
 r.arrowKeyStepMul = 1;
@@ -75,7 +80,15 @@ r.direction = \cw;
 r.wrap = true;
 r.text.round = 1;
 )
-focus
+
+r.handle.show = true
+r.handle.align = \inside
+r.handle.align =0.91
+r.handle.type = \circle
+r.handle.type = \lineAndCircle
+r.handle.radius = 8
+
+
 (
 // continuous/wrapping knob
 r = Rotary(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.4).front;
