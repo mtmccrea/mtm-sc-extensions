@@ -13,7 +13,6 @@ ValueView : View {
 	var <>mouseDownAction, <>mouseUpAction, <>mouseMoveAction;
 	var <>valuePerPixel;
 	var <layers; // array of drawing layers which respond to .properties
-	// var <notificationRegistrations;
 	var <maxUpdateRate=25, updateWait, allowUpdate=true, updateHeld=false;
 	var <step; 			// used for scrollWheel and arrow keys, initialized to spec.step
 	var <>arrowKeyStepMul=1;// scale step when arrow keys are pressed
