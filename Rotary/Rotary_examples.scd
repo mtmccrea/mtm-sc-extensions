@@ -55,6 +55,10 @@ r.scrollStepMul = 0.2;
 r.arrowKeyStepMul = 1;
 r.scrollDir = -1;
 
+r.handle.fill
+
+r.level.fillColor = {|me| Color.hsv( me.val.linlin(0,1,0.3,0.05), 0.7, 1, 1 )}
+r.level.fillColor = {|me| Color.hsv( me.val.lincurve(0,1,0.3,0.05,3), 0.7, 1, 1 )}
 
 r.innerRadiusRatio = 0.3;
 r.spec = [0, 360, \lin].asSpec;

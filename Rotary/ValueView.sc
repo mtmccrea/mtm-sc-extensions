@@ -66,7 +66,6 @@ ValueView : View {
 			this.stepByArrow(key);
 		});
 
-
 		this.onResize_({userView.bounds_(this.bounds.origin_(0@0))});
 		this.onClose_({}); // set default onClose to removeDependants
 	}
@@ -127,18 +126,20 @@ ValueView : View {
 			spec.constrain(val);
 		};
 		input = spec.unmap(value);
-
-		// TODO: add a notify flag instead of automatically notifying?
-		// notify dependants
-		this.changed(\value, value);
-		this.changed(\input, input);
-		this.refresh;
+		this.broadcastState;
 	}
 
 	// set the value by unmapping a normalized value 0>1
 	input_ {|normValue|
 		input = normValue.clip(0,1);
 		value = spec.map(input);
+		this.broadcastState;
+	}
+
+	broadcastState {
+		// update the value and input in layers' properties list
+		layers.do({|l| l.p.val = value; l.p.input = input});
+		// TODO: add a notify flag instead of automatically notifying?
 		// notify dependants
 		this.changed(\value, value);
 		this.changed(\input, input);
@@ -226,6 +227,8 @@ RotaryView : ValueView {
 
 	init {
 		|argInnerRadiusRatio, argStartAngle, argSweepLength|
+
+		// REQUIRED: in subclass init, initialize drawing layers
 
 		// initialize layer classes and save them to vars
 		#range, level, text, ticks, handle = [
