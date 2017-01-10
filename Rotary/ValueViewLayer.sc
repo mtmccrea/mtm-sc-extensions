@@ -318,15 +318,15 @@ RotaryHandleLayer : ValueViewLayer {
 				{view.wedgeWidth*p.align+view.innerRadius}
 			)
 		);
-		rect.postln;
 
 		Pen.rotate(view.prStartAngle+(view.prSweepLength*view.input));
 
 		Pen.moveTo(rect.right@0);
 		// Pen.lineTo(100, 5);
 		// Pen.lineTo(100, -5);
-		Pen.lineTo(rect.leftBottom.postln);
-		Pen.lineTo(rect.leftTop.postln);
+		Pen.lineTo(rect.leftBottom);
+		Pen.lineTo((rect.left+(h*0.1))@0);
+		Pen.lineTo(rect.leftTop);
 		Pen.lineTo(rect.right@0);
 
 		if (p.fillArrow) {
@@ -340,8 +340,11 @@ RotaryHandleLayer : ValueViewLayer {
 		// Pen.pop;
 	}
 
-	// set properties which require update
-	// to view's boarder padding as necessary
+
+	/*
+		Set properties which require update
+		to view's boarder padding as necessary
+	*/
 
 	radius_ {|px|
 		p.radius = px;

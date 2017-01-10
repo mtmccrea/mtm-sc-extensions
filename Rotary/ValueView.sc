@@ -17,7 +17,8 @@ ValueView : View {
 	var <step; 			// used for scrollWheel and arrow keys, initialized to spec.step
 	var <>arrowKeyStepMul=1;// scale step when arrow keys are pressed
 	var <>scrollStepMul=1;	// scale step when scroll wheel steps
-	var <>scrollDir= -1;	// change scroll direction, -1 or 1, -1 is "natural" scrolling on Mac
+	var <>xScrollDir= 1;	// change scroll direction, -1 or 1
+	var <>yScrollDir= -1;	// change scroll direction, -1 or 1, -1 is "natural" scrolling on Mac
 	var <>arrowKeyDir=1;	// change step direction of arrow keys (useful for some UI behavior)
 
 	*new { |parent, bounds, spec, initVal |
@@ -72,18 +73,20 @@ ValueView : View {
 
 	stepByMouseWheel {
 		|v, x, y, modifiers, xDelta, yDelta|
-		var delta;
-		delta = step * (xDelta+yDelta).sign * scrollDir * scrollStepMul;
+		var dx, dy, delta;
+		dx = xDelta * xScrollDir;
+		dy = yDelta * yScrollDir;
+		delta = step * (dx+dy).sign * scrollStepMul;
 		this.valueAction = value + delta;
 	}
 
 	stepByArrow { |key|
 		var dir, delta;
 		dir = switch( key,
-			16777234, {"left".postln; -1}, // left
-			16777235, {"up".postln; 1}, // up
-			16777236, {"right".postln; 1}, // right
-			16777237, {"down".postln; -1}, // down
+			16777234, {-1}, // left
+			16777235, {1},  // up
+			16777236, {1},  // right
+			16777237, {-1}, // down
 		);
 
 		dir !? {

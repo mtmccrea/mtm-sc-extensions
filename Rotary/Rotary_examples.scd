@@ -42,13 +42,15 @@ r.handleType_(\circle)
 r.wrap =true
 line
 
-(
+
+
 r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.1).front;
 r.handle.type = \arrow
 
 r.handle.fillArrow = false
 r.handle.fillArrow = true
 r.handle.arrowWLRatio = 1
+r.handle.arrowLengthRatio = 0.7
 r.handle.align = 0.2
 r.step = 0.1;
 r.scrollStepMul = 0.2;
@@ -60,6 +62,8 @@ r.handle.fill
 r.level.fillColor = {|me| Color.hsv( me.val.linlin(0,1,0.3,0.05), 0.7, 1, 1 )}
 r.level.fillColor = {|me| Color.hsv( me.val.lincurve(0,1,0.3,0.05,3), 0.7, 1, 1 )}
 
+(
+r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.1).front;
 r.innerRadiusRatio = 0.3;
 r.spec = [0, 360, \lin].asSpec;
 r.startAngle_(-0.0pi);
