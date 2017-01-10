@@ -44,13 +44,20 @@ line
 
 
 
-r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.1).clickMode_(\absolute).front;
+r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.1).clickMode_(\relative).front;
 r.direction = \cw
 r.startAngle_(-0.7pi).sweepLength_(1.4pi).direction = \ccw
 r.direction = \cw
-r.handle.type = \arrow
+
 
 r.clickMode = \absolute
+r.clickMode = \relative
+
+r.orientation = \circular
+r.orientation = \vertical
+
+r.bipolar = true
+r.bipolar = false
 
 r.handle.fillArrow = false
 r.handle.fillArrow = true
@@ -64,10 +71,31 @@ r.scrollDir = -1;
 
 r.handle.fill
 
+r.level.fillColor = {|me| if (me.val > r.centerNorm) {Color.green.alpha_(0.3)} {Color.red.alpha_(0.3)}}
+r.level.fillColor = {|me| if (r.value > r.centerNorm) {Color.green.alpha_(0.3)} {Color.red.alpha_(0.3)}}
+r.level.strokeColor = {|me| if (me.val > r.centerNorm) {Color.green} {Color.red}}
+r.range.stroke = false
+r.range.fillColor = Color(*0.8!3)
+
 r.level.fillColor = {|me| Color.hsv( me.val.linlin(0,1,0.3,0.05), 0.7, 1, 1 )}
 r.level.fillColor = {|me| Color.hsv( me.val.lincurve(0,1,0.3,0.05,3), 0.7, 1, 1 )}
 
-
+( // radio dial
+r.startAngle_(-0.7pi).sweepLength_(1.4pi).direction = \cw;
+r.handle.type = \arrow;
+r.handle.align = 0.95;
+r.handle.arrowWLRatio = 0.7;
+r.handle.arrowLengthRatio = 1.3;
+r.scrollStepMul_(0.51);
+r.step = 0.2;
+r.clickMode = \absolute;
+r.orientation_(\circular);
+r.ticks.show = true;
+r.numTicks_((r.spec.range / r.step).asInt+1, 1, true);
+r.ticks.majorColor = Color.red
+)
+r.action = {|v, value, input| [value, input].postln}
+r.step = 0.001
 
 (
 r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.1).front;

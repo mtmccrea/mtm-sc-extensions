@@ -3,7 +3,9 @@
 // and draws custom layers in a UserView, with mouse/arrow interaction
 
 // TODO
-// add absolute mode where knob jumps to click point
+// if properties can respond to functions which call r.value, does each layer property need to have a value and input set?
+// reconsider: input_ remap input back to it's stepped with the value
+// ^^ this has muddled what the input resolution can be, made step=0 a problem, and somehow circular dragging broke (see radial dial example)
 
 ValueView : View {
 	var <spec, <value, <input, <action, <userView;
@@ -135,6 +137,7 @@ ValueView : View {
 	input_ {|normValue|
 		input = normValue.clip(0,1);
 		value = spec.map(input);
+		input = spec.unmap(value); // remap input back to it's stepped with the value TODO: reconsider?
 		this.broadcastState;
 	}
 
@@ -157,7 +160,7 @@ ValueView : View {
 		this.doAction;
 	}
 
-	doAction {action.(value)}
+	doAction {action.(this, value, input)}
 
 	spec_ {|controlSpec, updateValue=true|
 		var rangeInPx = spec.range/valuePerPixel; // get old pixels per range
@@ -244,20 +247,20 @@ RotaryView : ValueView {
 		layers = [range, level, text, ticks, handle];
 
 		innerRadiusRatio = argInnerRadiusRatio ?? {0};
-		startAngle = argStartAngle; // reference 0 is UP
+		startAngle = argStartAngle;		// reference 0 is UP
 		sweepLength = argSweepLength;
 		direction = \cw;
 		dirFlag = 1;
 		orientation = \vertical;
 		wrap = false;
-		clickMode = \relative; // or \absolute, in which case value snaps to where mouse clicks
+		clickMode = \relative;			// or \absolute
 		boarderPad = 1;
 		boarderPx = boarderPad;
 
 		bipolar = false;
 		centerValue = spec.minval+spec.range.half;
 		centerNorm = spec.unmap(centerValue);
-		colorValBelow = 0.65; // shift level color by this value below center
+		colorValBelow = 0.65;// shift level color by this value below center
 
 		// valuePerPixel = spec.range / 200; // for interaction: movement range in pixels to cover full spec range
 		// valuePerRadian = spec.range / sweepLength;
@@ -342,9 +345,9 @@ RotaryView : ValueView {
 	respondToAbsoluteClick {
 		var pos, rad, radRel;
 		pos = (mouseDownPnt - cen);
-		rad = atan2(pos.y,pos.x);	// radian position, relative 0 at 3 o'clock
-		radRel = rad + 0.5pi * dirFlag;			// radian position, relative 0 at 12 o'clock, clockwise
-		radRel = (radRel - (startAngle*dirFlag)).wrap(0, 2pi);			// radian position, relative to start position
+		rad = atan2(pos.y,pos.x);								// radian position, relative 0 at 3 o'clock
+		radRel = rad + 0.5pi * dirFlag;							//  " relative 0 at 12 o'clock, clockwise
+		radRel = (radRel - (startAngle*dirFlag)).wrap(0, 2pi);	//  " relative to start position
 		if (radRel.inRange(0, sweepLength)) {
 			this.input_(radRel/sweepLength); // triggers refresh
 			this.doAction;
@@ -371,7 +374,7 @@ RotaryView : ValueView {
 	}
 
 	setPrCenter {
-		prCenterAngle = -0.5pi + startAngle + (centerNorm*sweepLength);
+		prCenterAngle = -0.5pi + startAngle + (centerNorm*sweepLength*dirFlag);
 		this.refresh;
 	}
 
@@ -500,7 +503,7 @@ RotaryView : ValueView {
 		var hop, ticks, numMaj, majList, minList;
 		hop = if (endTick) {sweepLength / (num-1)} {sweepLength / num};
 		// drawNum = if (sweepLength==2pi) {num-1} {num}; // don't draw overlaying ticks in the case of full circle
-		ticks = num.collect{|i| i * hop};
+		ticks = num.asInt.collect{|i| i * hop};
 		numMaj = num/majorEvery;
 		majList = List(numMaj);
 		minList = List(num-numMaj);

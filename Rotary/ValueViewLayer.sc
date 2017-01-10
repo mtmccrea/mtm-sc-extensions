@@ -91,9 +91,9 @@ RotaryLevelLayer : ValueViewLayer {
 		col = p.fillColor;
 		if (view.bipolar) {
 			stAngle = view.prCenterAngle;
-			if (view.input<view.centerNorm) {
-				col = Color.hsv(*col.asHSV * [1,1,view.colorValBelow, 1]);
-			};
+			// if (view.input<view.centerNorm) {
+			// 	col = Color.hsv(*col.asHSV * [1,1,view.colorValBelow, 1]);
+			// };
 		} {
 			stAngle = view.prStartAngle;
 		};
@@ -111,8 +111,8 @@ RotaryLevelLayer : ValueViewLayer {
 		if (view.bipolar) {
 			stAngle = view.prCenterAngle;
 			if (view.input<view.centerNorm) {
-				col = Color.hsv(*col.asHSV * [1,1,p.colorValBelow, 1]);
-			};
+				col = Color.hsv(*col.asHSV * [1,1,view.colorValBelow, 1]);
+			}
 		} {
 			stAngle = view.prStartAngle;
 		};
