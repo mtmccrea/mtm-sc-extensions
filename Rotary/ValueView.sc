@@ -2,9 +2,8 @@
 // that hold a mapped 'value' and normalized 'input',
 // and draws custom layers in a UserView, with mouse/arrow interaction
 
-// TODO: provide methods for common interaction calculations:
-// -distFromCenter, -
-// test drawing properties as functions of value
+// TODO
+// add absolute mode where knob jumps to click point
 
 ValueView : View {
 	var <spec, <value, <input, <action, <userView;
@@ -204,7 +203,7 @@ RotaryView : ValueView {
 
 	// variables to be use by this class which don't need getters
 	var innerRadiusRatio, boarderPx, <boarderPad;
-	var stValue, stInput; //, clickMode;
+	var stValue, stInput, >clickMode;
 
 	// create variables with getters which you want
 	// the drawing layers to access
@@ -251,8 +250,7 @@ RotaryView : ValueView {
 		dirFlag = 1;
 		orientation = \vertical;
 		wrap = false;
-		// TODO
-		// clickMode = \relative; // or \absolute, in which case value snaps to where mouse clicks
+		clickMode = \relative; // or \absolute, in which case value snaps to where mouse clicks
 		boarderPad = 1;
 		boarderPx = boarderPad;
 
@@ -305,6 +303,7 @@ RotaryView : ValueView {
 			// mouseDownPnt = x@y; // set for moveAction
 			stValue = value;
 			stInput = input;
+			if (clickMode=='absolute') {this.respondToAbsoluteClick};
 		};
 
 		mouseMoveAction  = {
@@ -325,25 +324,33 @@ RotaryView : ValueView {
 	// radial change, relative to center
 	respondToCircularMove {|mMovePnt|
 		var stPos, endPos, stRad, endRad, dRad;
-
 		stPos = (mouseDownPnt - cen);
 		stRad = atan2(stPos.y,stPos.x);
-
 		endPos = (mMovePnt - cen);
 		endRad = atan2(endPos.y, endPos.x);
-
 		dRad = (endRad - stRad).fold(0, pi) * dirFlag * (endRad - stRad).sign;
-		// postf("move % degrees\n", dRad.raddeg);
-
 		if (dRad !=0) {
-			this.input_(stInput + (dRad/sweepLength)); // causes refresh
+			this.input_(stInput + (dRad/sweepLength));			// triggers refresh
 			this.doAction;
 		};
-
 		// allow continuous updating of relative start point
 		mouseDownPnt = mMovePnt;
 		stValue = value;
 		stInput = input;
+	}
+
+	respondToAbsoluteClick {
+		var pos, rad, radRel;
+		pos = (mouseDownPnt - cen);
+		rad = atan2(pos.y,pos.x);	// radian position, relative 0 at 3 o'clock
+		radRel = rad + 0.5pi * dirFlag;			// radian position, relative 0 at 12 o'clock, clockwise
+		radRel = (radRel - (startAngle*dirFlag)).wrap(0, 2pi);			// radian position, relative to start position
+		if (radRel.inRange(0, sweepLength)) {
+			this.input_(radRel/sweepLength); // triggers refresh
+			this.doAction;
+			stValue = value;
+			stInput = input;
+		};
 	}
 
 	/* Orientation and Movement */
@@ -358,10 +365,9 @@ RotaryView : ValueView {
 
 	startAngle_ {|radians=0|
 		startAngle = radians;
-		prStartAngle = -0.5pi + startAngle; //*dirFlag); // start angle always relative to 0 is up, cw
+		prStartAngle = -0.5pi + startAngle;						// start angle always relative to 0 is up, cw
 		this.setPrCenter;
-		this.ticksAtValues_(majTickVals, minTickVals, false); // refresh the list of maj/minTicks positions
-		// this.refresh;
+		this.ticksAtValues_(majTickVals, minTickVals, false);	// refresh the list of maj/minTicks positions
 	}
 
 	setPrCenter {

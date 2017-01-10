@@ -44,8 +44,13 @@ line
 
 
 
-r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.1).front;
+r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.1).clickMode_(\absolute).front;
+r.direction = \cw
+r.startAngle_(-0.7pi).sweepLength_(1.4pi).direction = \ccw
+r.direction = \cw
 r.handle.type = \arrow
+
+r.clickMode = \absolute
 
 r.handle.fillArrow = false
 r.handle.fillArrow = true
@@ -61,6 +66,8 @@ r.handle.fill
 
 r.level.fillColor = {|me| Color.hsv( me.val.linlin(0,1,0.3,0.05), 0.7, 1, 1 )}
 r.level.fillColor = {|me| Color.hsv( me.val.lincurve(0,1,0.3,0.05,3), 0.7, 1, 1 )}
+
+
 
 (
 r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.1).front;
