@@ -19,7 +19,10 @@
 //     so if the spec is non-linear, the step can apply to the input rather than the output
 
 // should the value/input be constrained by step on either/or the setter and output?
-//
+
+// double check the arrow key IDs - compare to Knob
+
+// add a visual cue when widget is focussed
 
 /*
 step behavior:
@@ -31,40 +34,55 @@ optionally set inStep, a normalized value (?)
 
 ****there should only be keyStep, and scrollStep, normalized 0>1****
 
+NOTE: as the value of spec.step increases, scrolling become less practical,
+and in fact if the scrollStep is any significant value below the step (as a normalized value)
+it won't work (spec.step will alway constain the scrolling amount back to it's current position)
 */
+
+// TODO: on the arrow, consider *path, *curveTo, or *quadCurveTo
+// see https://www.toptal.com/c-plus-plus/rounded-corners-bezier-curves-qpainter
+
+// TODO: annular wedge and arc stroke shows buggy artifact at
+// start point when position isn't at a 90 degree position
+// and annular wedge start/endpoints don't join for some reason (see Pen.joinStyle = 0,1,2)
+// although the example for Pen.joinStyle looks OK
+//
+
+// TODO: should maxRefreshRate be optional?
+
 
 ValueView : View {
 	var <spec, <value, <input, <action;
 	var <>wrap=false;
-	var <maxUpdateRate=25, updateWait, allowUpdate=true, updateHeld=false;
+	var <>limitRefresh = false, <maxRefreshRate=25, updateWait, allowUpdate=true, updateHeld=false;
 
 	// interaction
 	var mouseDownPnt, mouseUpPnt, mouseMovePnt;
 	var <>mouseDownAction, <>mouseUpAction, <>mouseMoveAction;
 	var <>valuePerPixel;
-	var <step; 				// used for scrollWheel and arrow keys, initialized to spec.step
-	var <>arrowKeyStepMul=1;// scale step when arrow keys are pressed
-	var <>scrollStepMul=1;	// scale step when scroll wheel steps
-	var <>xScrollDir= 1;	// change scroll direction, -1 or 1
-	var <>yScrollDir= -1;	// change scroll direction, -1 or 1, -1 is "natural" scrolling on Mac
-	var <>keyDirLR=1;		// change step direction of Left/Right arrow keys (1=right increments)
-	var <>keyDirUD=1;		// change step direction of Up/Down arrow keys (1=up increments)
+	// var <step; 					// used for scrollWheel and arrow keys, initialized to spec.step
+	var <>keyStep    = 0.03333;	// scale step when arrow keys are pressed
+	var <>scrollStep = 0.01;	// scale _input_ step when scroll wheel moves
+	var <>xScrollDir = 1;		// change scroll direction, -1 or 1
+	var <>yScrollDir = -1;		// change scroll direction, -1 or 1, -1 is "natural" scrolling on Mac
+	var <>keyDirLR   = 1;		// change step direction of Left/Right arrow keys (1=right increments)
+	var <>keyDirUD   = 1;		// change step direction of Up/Down arrow keys (1=up increments)
 
 	var <userView;
-	var <layers;			// array of drawing layers which respond to .properties
+	var <layers;				// array of drawing layers which respond to .properties
 
 	*new { |parent, bounds, spec, initVal |
 		^super.new(parent, bounds).superInit(spec, initVal); //.init(*args)
 	}
 
 	superInit { |argSpec, initVal|
-		spec = argSpec ?? ControlSpec(0, 1, 'linear', 0.0, 0); // \unipolar default
+		spec = argSpec ?? \unipolar.asSpec.copy;
 		value = initVal ?? spec.default;
 		input = spec.unmap(value);
 		action = {};
 		valuePerPixel = spec.range / 200; // for interaction: movement range in pixels to cover full spec range
-		updateWait = maxUpdateRate.reciprocal;
-		step = if (spec.step == 0) {0.01} {spec.step};
+		updateWait = maxRefreshRate.reciprocal;
+		// step = if (spec.step == 0) {0.01} {spec.step};
 
 
 		userView = UserView(this, this.bounds.origin_(0@0)).resize_(5);
@@ -107,11 +125,12 @@ ValueView : View {
 	stepByScroll {
 		|v, x, y, modifiers, xDelta, yDelta|
 		var dx, dy, delta;
-		"scrolling".postln;
 		dx = xDelta * xScrollDir;
 		dy = yDelta * yScrollDir;
-		delta = max(step, 1e-10) * (dx+dy).sign * scrollStepMul; // don't let step = 0
-		this.valueAction = value + delta;
+		// delta = max(step, 1e-10)  * (dx+dy).sign * scrollStepMul; // don't let step = 0
+		// this.valueAction = value + delta;
+		delta = scrollStep * (dx+dy).sign;
+		this.inputAction = input + delta;
 	}
 
 	stepByArrowKey { |key|
@@ -124,8 +143,10 @@ ValueView : View {
 			{^this}						// break
 		);
 
-		delta = max(step, 1e-10) * dir * arrowKeyStepMul;
-		this.valueAction = value + delta;
+		// delta = max(step, 1e-10) * dir * arrowKeyStepMul;
+		// this.valueAction = value + delta;
+		delta = keyStep * dir;
+		this.inputAction = input + delta;
 	}
 
 	// overwrite default View method to retain freeing dependants
@@ -173,6 +194,16 @@ ValueView : View {
 		this.broadcastState;
 	}
 
+	valueAction_ {|val|
+		this.value_(val);
+		this.doAction;
+	}
+
+	inputAction_ {|normValue|
+		this.input_(normValue);
+		this.doAction;
+	}
+
 	broadcastState {
 		// update the value and input in layers' properties list
 		layers.do({|l| l.p.val = value; l.p.input = input});
@@ -187,15 +218,14 @@ ValueView : View {
 		action = actionFunc;
 	}
 
-	valueAction_ {|val|
-		this.value_(val);
-		this.doAction;
-	}
-
 	doAction {action.(this, value, input)}
 
 	spec_ {|controlSpec, updateValue=true|
 		var rangeInPx = spec.range/valuePerPixel; // get old pixels per range
+		if (controlSpec.isKindOf(ControlSpec).not) {
+			"Spec provided isn't a ControlSpec. Spec isn't updated".warn;
+			^this
+		};
 		spec = controlSpec;
 		this.rangeInPixels_(rangeInPx); // restore mouse scaling so it feels the same
 		updateValue.if{this.value_(value)}; // also updates input
@@ -203,6 +233,7 @@ ValueView : View {
 
 	// refresh { userView.refresh }
 	refresh {
+		if (limitRefresh) {
 		if (allowUpdate) {
 			userView.refresh;
 			allowUpdate = false;
@@ -217,21 +248,24 @@ ValueView : View {
 		} {
 			updateHeld = true;
 		};
+		} {
+			userView.refresh;
+		}
 	}
 
 	rangeInPixels_ { |px|
 		valuePerPixel = spec.range/px;
 	}
 
-	maxUpdateRate_ { |hz|
-		maxUpdateRate = hz;
-		updateWait = maxUpdateRate.reciprocal;
+	maxRefreshRate_ { |hz|
+		maxRefreshRate = hz;
+		updateWait = maxRefreshRate.reciprocal;
 	}
 
-	step_ {|stepVal|
-		step = stepVal;
-		spec.step_(step);
-	}
+	// step_ {|stepVal|
+	// 	step = stepVal;
+	// 	spec.step_(step);
+	// }
 }
 
 RotaryView : ValueView {

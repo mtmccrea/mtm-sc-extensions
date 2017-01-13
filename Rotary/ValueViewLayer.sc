@@ -22,6 +22,38 @@ ValueViewLayer {
 	}
 
 	properties {^p}
+
+	getJoinIndex {|style|
+		if (style.isKindOf(Number))
+		{^style}
+		{
+			^switch(style,
+				\miter, {0}, // pointed corners, will overshoot vertex at sharp angles
+				\round, {1}, // round corners
+				\bevel, {2}, // snubbed corners
+				{0} // default
+			)
+		}
+	}
+
+	getCapIndex {|style|
+		if (style.isKindOf(Number))
+		{^style}
+		{
+			^switch(style,
+				// square end that doesn't overshoot endpoint,
+				// i.e. "butts" up angainst the endpoint
+				\butt, {0},
+				// same as butt, as Qt calls it
+				\flat, {0},
+				\round, {1},
+				// square end that overshoots endpoint by half pen width,
+				// i.e. center of the brush stops on the endpoint
+				\square, {2},
+				{0} // default
+			)
+		}
+	}
 }
 
 RotaryRangeLayer : ValueViewLayer {
@@ -81,6 +113,8 @@ RotaryLevelLayer : ValueViewLayer {
 			strokeWidth: 2,
 			fill: 		 true,
 			fillColor: 	 Color.white,
+			capStyle:	 0, // flat
+			joinStyle:	 0,
 		)
 	}
 
@@ -91,9 +125,6 @@ RotaryLevelLayer : ValueViewLayer {
 		col = p.fillColor;
 		if (view.bipolar) {
 			stAngle = view.prCenterAngle;
-			// if (view.input<view.centerNorm) {
-			// 	col = Color.hsv(*col.asHSV * [1,1,view.colorValBelow, 1]);
-			// };
 		} {
 			stAngle = view.prStartAngle;
 		};
@@ -121,15 +152,19 @@ RotaryLevelLayer : ValueViewLayer {
 		inset = p.strokeWidth*0.5;
 		switch (p.strokeType,
 			\around, {
+				Pen.joinStyle = this.getJoinIndex(p.joinStyle);
 				Pen.addAnnularWedge(view.cen, view.innerRadius, view.radius-inset, stAngle, view.levelSweepLength);
 			},
 			\inside, {
+				Pen.capStyle = this.getCapIndex(p.capStyle);
 				Pen.addArc(view.cen, view.innerRadius+inset, stAngle, view.levelSweepLength);
 			},
 			\outside, {
+				Pen.capStyle = this.getCapIndex(p.capStyle);
 				Pen.addArc(view.cen, view.radius-inset, stAngle, view.levelSweepLength);
 			},
 			\insideOutside, {
+				Pen.capStyle = this.getCapIndex(p.capStyle);
 				Pen.addArc(view.cen, view.innerRadius+inset, stAngle, view.levelSweepLength);
 				Pen.addArc(view.cen, view.radius-inset, stAngle, view.levelSweepLength);
 			},
@@ -256,7 +291,9 @@ RotaryHandleLayer : ValueViewLayer {
 			type:	\line, // line, circle, lineAndCircle, arrow
 			arrowLengthRatio: 0.3,
 			arrowWLRatio: 0.5,
-			fillArrow: true
+			fillArrow: true,
+			capStyle: \round,
+			joinStyle: \round,
 		)
 	}
 
@@ -277,8 +314,9 @@ RotaryHandleLayer : ValueViewLayer {
 	}
 
 	drawLine {
-		Pen.width_(p.width);
-		Pen.strokeColor_(p.color);
+		Pen.capStyle = this.getCapIndex(p.capStyle);
+		Pen.width = p.width;
+		Pen.strokeColor = p.color;
 		Pen.moveTo(view.innerRadius@0);
 		Pen.lineTo(view.radius@0);
 		Pen.rotate(view.prStartAngle+(view.prSweepLength*view.input));
@@ -289,7 +327,7 @@ RotaryHandleLayer : ValueViewLayer {
 		var d, rect;
 		d = p.radius*2;
 		rect = Size(d, d).asRect;
-		Pen.fillColor_(p.color);
+		Pen.fillColor = p.color;
 		switch (p.align,
 			\inside, {rect = rect.center_(view.innerRadius@0)},
 			\outside, {rect = rect.center_(view.radius@0)},
@@ -319,25 +357,23 @@ RotaryHandleLayer : ValueViewLayer {
 			)
 		);
 
-		Pen.rotate(view.prStartAngle+(view.prSweepLength*view.input));
 
+		Pen.rotate(view.prStartAngle+(view.prSweepLength*view.input));
 		Pen.moveTo(rect.right@0);
-		// Pen.lineTo(100, 5);
-		// Pen.lineTo(100, -5);
 		Pen.lineTo(rect.leftBottom);
 		Pen.lineTo((rect.left+(h*0.1))@0);
 		Pen.lineTo(rect.leftTop);
 		Pen.lineTo(rect.right@0);
 
 		if (p.fillArrow) {
-			Pen.fillColor_(p.color);
+			Pen.fillColor = p.color;
 			Pen.fill;
 		} {
-			Pen.strokeColor_(p.color);
+			Pen.width = p.width;
+			Pen.joinStyle = this.getJoinIndex(p.joinStyle);
+			Pen.strokeColor = p.color;
 			Pen.stroke;
 		};
-
-		// Pen.pop;
 	}
 
 
