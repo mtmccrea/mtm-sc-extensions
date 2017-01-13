@@ -6,34 +6,66 @@
 // if properties can respond to functions which call r.value, does each layer property need to have a value and input set?
 // reconsider: input_ remap input back to it's stepped with the value
 // ^^ this has muddled what the input resolution can be, made step=0 a problem, and somehow circular dragging broke (see radial dial example)
+// when stroking the outside of the range, fix the line termination
+
+// Knob behavior to port:
+// - make it possible to basically make the same sc knob (visually)
+// - k.enabled = false; // disables interaction, dims the knob
+// add shift_scale, ctl_scale, alt_scale
+// add modelUpdateOnly flag, which if true interacting with the view doesn't
+//     update the display (does action with value without updating ui), expecting the
+//     model to update it
+// have an inputStep and valueStep, which are exclusive of one another
+//     so if the spec is non-linear, the step can apply to the input rather than the output
+
+// should the value/input be constrained by step on either/or the setter and output?
+//
+
+/*
+step behavior:
+
+separate keystep, scrollstep
+should be able to set input to any value? i.e. default behavior steps unrestricted (non-rounded)
+set it in value
+optionally set inStep, a normalized value (?)
+
+****there should only be keyStep, and scrollStep, normalized 0>1****
+
+*/
 
 ValueView : View {
-	var <spec, <value, <input, <action, <userView;
+	var <spec, <value, <input, <action;
 	var <>wrap=false;
+	var <maxUpdateRate=25, updateWait, allowUpdate=true, updateHeld=false;
+
+	// interaction
 	var mouseDownPnt, mouseUpPnt, mouseMovePnt;
 	var <>mouseDownAction, <>mouseUpAction, <>mouseMoveAction;
 	var <>valuePerPixel;
-	var <layers; // array of drawing layers which respond to .properties
-	var <maxUpdateRate=25, updateWait, allowUpdate=true, updateHeld=false;
-	var <step; 			// used for scrollWheel and arrow keys, initialized to spec.step
+	var <step; 				// used for scrollWheel and arrow keys, initialized to spec.step
 	var <>arrowKeyStepMul=1;// scale step when arrow keys are pressed
 	var <>scrollStepMul=1;	// scale step when scroll wheel steps
 	var <>xScrollDir= 1;	// change scroll direction, -1 or 1
 	var <>yScrollDir= -1;	// change scroll direction, -1 or 1, -1 is "natural" scrolling on Mac
-	var <>arrowKeyDir=1;	// change step direction of arrow keys (useful for some UI behavior)
+	var <>keyDirLR=1;		// change step direction of Left/Right arrow keys (1=right increments)
+	var <>keyDirUD=1;		// change step direction of Up/Down arrow keys (1=up increments)
+
+	var <userView;
+	var <layers;			// array of drawing layers which respond to .properties
 
 	*new { |parent, bounds, spec, initVal |
 		^super.new(parent, bounds).superInit(spec, initVal); //.init(*args)
 	}
 
 	superInit { |argSpec, initVal|
-		spec = argSpec ?? \unipolar.asSpec;
+		spec = argSpec ?? ControlSpec(0, 1, 'linear', 0.0, 0); // \unipolar default
 		value = initVal ?? spec.default;
 		input = spec.unmap(value);
 		action = {};
 		valuePerPixel = spec.range / 200; // for interaction: movement range in pixels to cover full spec range
 		updateWait = maxUpdateRate.reciprocal;
 		step = if (spec.step == 0) {0.01} {spec.step};
+
 
 		userView = UserView(this, this.bounds.origin_(0@0)).resize_(5);
 		userView.drawFunc_(this.drawFunc);
@@ -57,43 +89,43 @@ ValueView : View {
 
 		userView.mouseWheelAction_({
 			|v, x, y, modifiers, xDelta, yDelta|
-			this.stepByMouseWheel(v, x, y, modifiers, xDelta, yDelta);
+			this.stepByScroll(v, x, y, modifiers, xDelta, yDelta);
 		});
 
 		// add mouse wheel action directly
 		// NOTE: if overwriting this function, include a call to
-		// this.stepByArrow(key) to retain key inc/decrement capability
+		// this.stepByArrowKey(key) to retain key inc/decrement capability
 		userView.keyDownAction_ ({
 			|view, char, modifiers, unicode, keycode, key|
-			this.stepByArrow(key);
+			this.stepByArrowKey(key);
 		});
 
 		this.onResize_({userView.bounds_(this.bounds.origin_(0@0))});
 		this.onClose_({}); // set default onClose to removeDependants
 	}
 
-	stepByMouseWheel {
+	stepByScroll {
 		|v, x, y, modifiers, xDelta, yDelta|
 		var dx, dy, delta;
+		"scrolling".postln;
 		dx = xDelta * xScrollDir;
 		dy = yDelta * yScrollDir;
-		delta = step * (dx+dy).sign * scrollStepMul;
+		delta = max(step, 1e-10) * (dx+dy).sign * scrollStepMul; // don't let step = 0
 		this.valueAction = value + delta;
 	}
 
-	stepByArrow { |key|
+	stepByArrowKey { |key|
 		var dir, delta;
 		dir = switch( key,
-			16777234, {-1}, // left
-			16777235, {1},  // up
-			16777236, {1},  // right
-			16777237, {-1}, // down
+			16777234, {-1 * keyDirLR},	// left
+			16777236, { 1 * keyDirLR},  // right
+			16777237, {-1 * keyDirUD},	// down
+			16777235, { 1 * keyDirUD},	// up
+			{^this}						// break
 		);
 
-		dir !? {
-			delta = step * dir * arrowKeyDir * arrowKeyStepMul;
-			this.valueAction = value + delta;
-		}
+		delta = max(step, 1e-10) * dir * arrowKeyStepMul;
+		this.valueAction = value + delta;
 	}
 
 	// overwrite default View method to retain freeing dependants
@@ -257,6 +289,10 @@ RotaryView : ValueView {
 		boarderPad = 1;
 		boarderPx = boarderPad;
 
+		radius = this.bounds.width/2;
+		innerRadius = radius*innerRadiusRatio;
+		wedgeWidth = radius-innerRadius;
+
 		bipolar = false;
 		centerValue = spec.minval+spec.range.half;
 		centerNorm = spec.unmap(centerValue);
@@ -280,7 +316,7 @@ RotaryView : ValueView {
 			bnds = v.bounds;
 			cen  = bnds.center;
 			radius = min(cen.x, cen.y) - boarderPx;
-			innerRadius = radius*innerRadiusRatio;
+			innerRadius = radius * innerRadiusRatio;
 			wedgeWidth = radius - innerRadius;
 			levelSweepLength = if (bipolar,{input - centerNorm},{input}) * prSweepLength;
 			this.drawInThisOrder;
@@ -326,12 +362,15 @@ RotaryView : ValueView {
 
 	// radial change, relative to center
 	respondToCircularMove {|mMovePnt|
-		var stPos, endPos, stRad, endRad, dRad;
+	/*	var stPos, endPos, stRad, endRad, dRad, delta;
 		stPos = (mouseDownPnt - cen);
 		stRad = atan2(stPos.y,stPos.x);
 		endPos = (mMovePnt - cen);
 		endRad = atan2(endPos.y, endPos.x);
-		dRad = (endRad - stRad).fold(0, pi) * dirFlag * (endRad - stRad).sign;
+		delta = endRad - stRad;
+		// dRad = delta.fold(0, pi) * dirFlag * delta.sign;
+		dRad = delta.fold(0, pi) * dirFlag * delta.isPositive.if({1},{-1});
+		postf("st: %, end: %, delta: %, delta_mapped: %\n",stRad, endRad, delta, dRad);
 		if (dRad !=0) {
 			this.input_(stInput + (dRad/sweepLength));			// triggers refresh
 			this.doAction;
@@ -339,7 +378,18 @@ RotaryView : ValueView {
 		// allow continuous updating of relative start point
 		mouseDownPnt = mMovePnt;
 		stValue = value;
-		stInput = input;
+		stInput = input;*/
+		var pos, rad, radRel;
+		pos = (mMovePnt - cen);
+		rad = atan2(pos.y,pos.x);								// radian position, relative 0 at 3 o'clock
+		radRel = rad + 0.5pi * dirFlag;							//  " relative 0 at 12 o'clock, clockwise
+		radRel = (radRel - (startAngle*dirFlag)).wrap(0, 2pi);	//  " relative to start position
+		if (radRel.inRange(0, sweepLength)) {
+			this.input_(radRel/sweepLength); // triggers refresh
+			this.doAction;
+			stValue = value;
+			stInput = input;
+		};
 	}
 
 	respondToAbsoluteClick {

@@ -81,20 +81,27 @@ r.level.fillColor = {|me| Color.hsv( me.val.linlin(0,1,0.3,0.05), 0.7, 1, 1 )}
 r.level.fillColor = {|me| Color.hsv( me.val.lincurve(0,1,0.3,0.05,3), 0.7, 1, 1 )}
 
 ( // radio dial
+r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.1).clickMode_(\relative).front;
 r.startAngle_(-0.7pi).sweepLength_(1.4pi).direction = \cw;
 r.handle.type = \arrow;
-r.handle.align = 0.95;
-r.handle.arrowWLRatio = 0.7;
-r.handle.arrowLengthRatio = 1.3;
+r.handle.arrowWLRatio_(0.7).arrowLengthRatio_(1.3).align_(0.95).color_(Color.hsv(0,0.8,0.9));
 r.scrollStepMul_(0.51);
-r.step = 0.2;
+// r.step = 0.2;
 r.clickMode = \absolute;
 r.orientation_(\circular);
 r.ticks.show = true;
 r.numTicks_((r.spec.range / r.step).asInt+1, 1, true);
-r.ticks.majorColor = Color.red
+r.ticks.majorColor = Color.black;
+r.range.fillColor = Color(*0.8!3);
+r.level.fill = false;
+r.level.strokeType_(\outside).strokeWidth_(8).strokeColor_(Color.hsv(0,1,0.6));
+r.text.align_(0.5@0.8).font_(Font("Monaco", 24));
+r.action = {|v, value, input| [value, input].postln};
 )
-r.action = {|v, value, input| [value, input].postln}
+
+r.scrollStepMul_(0.1);
+r.step = 0.2;
+
 r.step = 0.001
 
 (
@@ -117,11 +124,13 @@ r.ticks.minorColor = Color.gray;
 r.ticks.majorColor = Color.red;
 r.ticks.align = \center;
 r.ticks.majorRatio = 0.6;
-r.action = {|val| val.postln};
+r.action = {|view, val, input| val.postln};
 // r.action = nil;
 r.direction = \cw;
 r.wrap = true;
 r.text.round = 1;
+r.scrollStepMul_(12.51);
+r.step
 )
 
 r.handle.show = true
