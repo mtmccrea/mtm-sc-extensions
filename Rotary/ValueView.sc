@@ -36,7 +36,7 @@ optionally set inStep, a normalized value (?)
 
 NOTE: as the value of spec.step increases, scrolling become less practical,
 and in fact if the scrollStep is any significant value below the step (as a normalized value)
-it won't work (spec.step will alway constain the scrolling amount back to it's current position)
+it won't work (spec.step will always constrain the scrolling amount back to it's current position)
 */
 
 // TODO: on the arrow, consider *path, *curveTo, or *quadCurveTo
@@ -46,30 +46,42 @@ it won't work (spec.step will alway constain the scrolling amount back to it's c
 // start point when position isn't at a 90 degree position
 // and annular wedge start/endpoints don't join for some reason (see Pen.joinStyle = 0,1,2)
 // although the example for Pen.joinStyle looks OK
-//
+
+
+// consider adding easy way to make bezier curves instead of squared off stuff:
+//   https://www.toptal.com/c-plus-plus/rounded-corners-bezier-curves-qpainter
 
 // TODO: should maxRefreshRate be optional?
+
+// TODO: only update if value is different... check the edge cases though to make sure its a good idea
 
 
 ValueView : View {
 	var <spec, <value, <input, <action;
 	var <>wrap=false;
 	var <>limitRefresh = false, <maxRefreshRate=25, updateWait, allowUpdate=true, updateHeld=false;
+	var <>suppressRepeatedAction = true;
 
 	// interaction
 	var mouseDownPnt, mouseUpPnt, mouseMovePnt;
 	var <>mouseDownAction, <>mouseUpAction, <>mouseMoveAction;
 	var <>valuePerPixel;
-	// var <step; 					// used for scrollWheel and arrow keys, initialized to spec.step
-	var <>keyStep    = 0.03333;	// scale step when arrow keys are pressed
-	var <>scrollStep = 0.01;	// scale _input_ step when scroll wheel moves
-	var <>xScrollDir = 1;		// change scroll direction, -1 or 1
-	var <>yScrollDir = -1;		// change scroll direction, -1 or 1, -1 is "natural" scrolling on Mac
-	var <>keyDirLR   = 1;		// change step direction of Left/Right arrow keys (1=right increments)
-	var <>keyDirUD   = 1;		// change step direction of Up/Down arrow keys (1=up increments)
+
+	/*
+	 * step vars describe the step amount
+	 * as a percentage of the range of the spec
+	 * e.g. keyStep of 0.05 means 20 key strokes
+	 * to cover the full range of the value */
+	var <>keyStep    = 0.03333333;				// scale step when arrow keys are pressed
+	var <>scrollStep = 0.01;					// scale _input_ step when scroll wheel moves
+
+	var <>xScrollDir = 1;						// change scroll direction, -1 or 1
+	var <>yScrollDir = -1;						// change scroll direction, -1 or 1, -1 is "natural" scrolling on Mac
+	var <>keyDirLR   = 1;						// change step direction of Left/Right arrow keys (1=right increments)
+	var <>keyDirUD   = 1;						// change step direction of Up/Down arrow keys (1=up increments)
 
 	var <userView;
-	var <layers;				// array of drawing layers which respond to .properties
+	var <layers;								// array of drawing layers which respond to .properties
 
 	*new { |parent, bounds, spec, initVal |
 		^super.new(parent, bounds).superInit(spec, initVal); //.init(*args)
@@ -82,8 +94,6 @@ ValueView : View {
 		action = {};
 		valuePerPixel = spec.range / 200; // for interaction: movement range in pixels to cover full spec range
 		updateWait = maxRefreshRate.reciprocal;
-		// step = if (spec.step == 0) {0.01} {spec.step};
-
 
 		userView = UserView(this, this.bounds.origin_(0@0)).resize_(5);
 		userView.drawFunc_(this.drawFunc);
@@ -174,8 +184,9 @@ ValueView : View {
 	drawFunc { this.subclassResponsibility(thisMethod) }
 
 	value_ {|val|
+		var oldValue = value;
 		// TODO: should wrap option be default behavior?
-		// or should subclass add this via method overwrite
+		// or should subclass add this via method override
 		// as desired?
 		value = if (wrap) {
 			val.wrap(spec.minval, spec.maxval);
@@ -183,42 +194,58 @@ ValueView : View {
 			spec.constrain(val);
 		};
 		input = spec.unmap(value);
-		this.broadcastState;
+		this.broadcastState(value!=oldValue);
 	}
 
 	// set the value by unmapping a normalized value 0>1
 	input_ {|normValue|
-		input = normValue.clip(0,1);
+		var oldValue = value;
+		input = if (wrap) {
+			normValue.wrap(0,1);
+		} {
+			normValue.clip(0,1);
+		};
 		value = spec.map(input);
 		input = spec.unmap(value); // remap input back to it's stepped with the value TODO: reconsider?
-		this.broadcastState;
+		this.broadcastState(value!=oldValue);
 	}
 
 	valueAction_ {|val|
+		var oldValue = value;
 		this.value_(val);
-		this.doAction;
+		this.doAction(oldValue!=value);
 	}
 
 	inputAction_ {|normValue|
+		var oldValue = value;
 		this.input_(normValue);
-		this.doAction;
+		this.doAction(oldValue!=value);
 	}
 
-	broadcastState {
+	broadcastState { |newValue=true|
 		// update the value and input in layers' properties list
 		layers.do({|l| l.p.val = value; l.p.input = input});
 		// TODO: add a notify flag instead of automatically notifying?
+		// TODO: consider making this a global flag, e.g. broadcastNewOnly
+		// the risk of only broadcasting new values is that a new listener may not be updated
+		// if value doesn't change for a while... but is this the listener's responsibility to
+		// get an initial state?
 		// notify dependants
 		this.changed(\value, value);
 		this.changed(\input, input);
-		this.refresh;
+		// TODO: consider making this a global flag, e.g. refreshNewOnly
+		if (newValue) {this.refresh};
 	}
 
 	action_ { |actionFunc|
 		action = actionFunc;
 	}
 
-	doAction {action.(this, value, input)}
+	doAction { |newValue=true|
+		if (suppressRepeatedAction.not or: newValue) {
+			action.(this, value, input)
+		};
+	}
 
 	spec_ {|controlSpec, updateValue=true|
 		var rangeInPx = spec.range/valuePerPixel; // get old pixels per range
@@ -234,20 +261,20 @@ ValueView : View {
 	// refresh { userView.refresh }
 	refresh {
 		if (limitRefresh) {
-		if (allowUpdate) {
-			userView.refresh;
-			allowUpdate = false;
-			AppClock.sched(updateWait, {
+			if (allowUpdate) {
+				userView.refresh;
+				allowUpdate = false;
+				AppClock.sched(updateWait, {
 
-				if (updateHeld) {  // perform deferred refresh
-					userView.refresh;
-					updateHeld = false;
-				};
-				allowUpdate = true;
-			});
-		} {
-			updateHeld = true;
-		};
+					if (updateHeld) {  // perform deferred refresh
+						userView.refresh;
+						updateHeld = false;
+					};
+					allowUpdate = true;
+				});
+			} {
+				updateHeld = true;
+			};
 		} {
 			userView.refresh;
 		}
@@ -390,8 +417,10 @@ RotaryView : ValueView {
 	}
 
 	respondToLinearMove {|dPx|
-		if (dPx != 0) {this.valueAction_(stValue + (dPx * valuePerPixel))};
-		this.refresh;
+		if (dPx != 0) {
+			this.valueAction_(stValue + (dPx * valuePerPixel))
+		};
+		// this.refresh;
 	}
 
 	// radial change, relative to center
@@ -419,8 +448,7 @@ RotaryView : ValueView {
 		radRel = rad + 0.5pi * dirFlag;							//  " relative 0 at 12 o'clock, clockwise
 		radRel = (radRel - (startAngle*dirFlag)).wrap(0, 2pi);	//  " relative to start position
 		if (radRel.inRange(0, sweepLength)) {
-			this.input_(radRel/sweepLength); // triggers refresh
-			this.doAction;
+			this.inputAction_(radRel/sweepLength); // triggers refresh
 			stValue = value;
 			stInput = input;
 		};
@@ -433,8 +461,7 @@ RotaryView : ValueView {
 		radRel = rad + 0.5pi * dirFlag;							//  " relative 0 at 12 o'clock, clockwise
 		radRel = (radRel - (startAngle*dirFlag)).wrap(0, 2pi);	//  " relative to start position
 		if (radRel.inRange(0, sweepLength)) {
-			this.input_(radRel/sweepLength); // triggers refresh
-			this.doAction;
+			this.inputAction_(radRel/sweepLength); // triggers refresh
 			stValue = value;
 			stInput = input;
 		};

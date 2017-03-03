@@ -80,7 +80,9 @@ r.range.fillColor = Color(*0.8!3)
 r.level.fillColor = {|me| Color.hsv( me.val.linlin(0,1,0.3,0.05), 0.7, 1, 1 )}
 r.level.fillColor = {|me| Color.hsv( me.val.lincurve(0,1,0.3,0.05,3), 0.7, 1, 1 )}
 
-( // radio dial
+
+/* radio dial */
+(
 r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.1).clickMode_(\relative).front;
 r.startAngle_(-0.7pi).sweepLength_(1.4pi).direction = \cw;
 r.handle.type = \arrow;
@@ -89,44 +91,52 @@ r.handle.arrowWLRatio_(0.7).arrowLengthRatio_(1.3).align_(0.95).color_(Color.hsv
 r.clickMode = \absolute;
 r.orientation_(\circular);
 r.ticks.show = true;
-r.numTicks_(5, 1, true);
+r.numTicks_(5, majorEvery: 1, endTick: true);
 r.ticks.majorColor = Color.black;
 r.range.fillColor = Color(*0.8!3);
 r.level.fill = false;
 r.level.strokeType_(\outside).strokeWidth_(8).strokeColor_(Color.hsv(0,1,0.6));
 r.text.align_(0.5@0.8).font_(Font("Monaco", 24));
-// r.action = {|v, value, input| [value, input].postln};
-r.spec.step_(r.spec.range/4);
+r.action = {|v, value, input| [value, input].postln};
+r.spec.step_(r.spec.range/4)
 )
-r.direction = \ccw
-r.scrollStepMul_(2);
-r.step = 0.2;
-r.spec.step = 0
 
-r.level.strokeType_(\around)
-r.level.strokeType_(\insideOutside)
-r.level.strokeWidth = 22
-r.level.joinStyle = 1
+// note, this will perform the action on every mouse move, even if it's the same value
+r.suppressRepeatedAction = false;
+// default behavior is to perform the action only if the value is new:
+r.suppressRepeatedAction = true;
 
-r.orientation_(\vertical);
-r.orientation_(\horizontal);
+(
+// variation on dial
+r.handle.type = \line;
+r.handle.width = 10;
+r.handle.capStyle = \round;
+r.handle.capStyle = \flat;
+r.handle.getCapIndex(\square);
+)
+(
+// variation on dial
+r.handle.type = \arrow;
+r.level.strokeType_(\around);
+r.handle.fillArrow = false;
+r.handle.width = 25;
+r.handle.joinStyle = \miter;
+r.handle.joinStyle = \round;
+r.handle.joinStyle = \bevel;
+)
+(
+r.handle.type = \arrow;
+r.handle.fillArrow = true;
+r.handle.stroke = true;
+r.handle.width = 5;
+r.handle.align = 0.95; // where does tip of arrow fall
+r.handle.arrowLengthRatio = 0.4;
+r.handle.arrowWLRatio = 0.4;
+r.level.stroke = false;
+)
 
-r.handle.type = \arrow
-r.handle.fillArrow = false
-r.handle.fillArrow = true
-r.handle.width = 25
-r.handle.joinStyle = \miter
-r.handle.joinStyle = \round
-r.handle.joinStyle = \bevel
 
-r.handle.type = \line
-r.handle.width = 10
-r.handle.capStyle = \round
-r.handle.capStyle = \flat
-r.handle.getCapIndex(\square)
-
-
-
+/* continuoud/wrapping dial */
 (
 r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.1).front;
 r.innerRadiusRatio = 0.3;
@@ -148,20 +158,23 @@ r.ticks.majorColor = Color.red;
 r.ticks.align = \center;
 r.ticks.majorRatio = 0.6;
 r.action = {|view, val, input| val.postln};
-// r.action = nil;
-r.direction = \cw;
+r.direction = \ccw;
 r.wrap = true;
-r.text.round = 1;
-r.scrollStepMul_(12.51);
-r.step
+r.text.round = 1; // round the value of the displayed text
+r.scrollStep_(0.01); // percentage of the full range for each scroll step
+r.keyStep_(0.05); // percentage of the full range for each key step, 20 strokes per range in this case
 )
 
-r.handle.show = true
+(
 r.handle.align = \inside
 r.handle.align =0.91
 r.handle.type = \circle
+)
+(
 r.handle.type = \lineAndCircle
-r.handle.radius = 8
+r.handle.align =0.5;
+r.handle.radius = 8;
+)
 
 r.handle.type = \line
 r.handle.p.keys
@@ -171,8 +184,8 @@ r.handle.p.keys
 // continuous/wrapping knob
 r = Rotary(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.4).front;
 r.spec = [0, 360, \lin].asSpec;
-r.startAngle_(0.5pi);
-r.sweepLength = 1pi;
+r.startAngle_(0.0pi);
+r.sweepLength = 2pi;
 r.rangeFillColor = Color.new(0.9,0.9,0.9);
 r.strokeRange = false;
 r.showHandle_(true).handleColor_(Color.green);
