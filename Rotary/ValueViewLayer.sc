@@ -28,10 +28,10 @@ ValueViewLayer {
 		{^style}
 		{
 			^switch(style,
-				\miter, {0}, // pointed corners, will overshoot vertex at sharp angles
-				\round, {1}, // round corners
-				\bevel, {2}, // snubbed corners
-				{0} // default
+				\miter, {0}, 			// pointed corners, will overshoot vertex at sharp angles
+				\round, {1}, 			// round corners
+				\bevel, {2}, 			// snubbed corners
+				{0} 							// default
 			)
 		}
 	}
@@ -41,16 +41,11 @@ ValueViewLayer {
 		{^style}
 		{
 			^switch(style,
-				// square end that doesn't overshoot endpoint,
-				// i.e. "butts" up angainst the endpoint
-				\butt, {0},
-				// same as butt, as Qt calls it
-				\flat, {0},
-				\round, {1},
-				// square end that overshoots endpoint by half pen width,
-				// i.e. center of the brush stops on the endpoint
-				\square, {2},
-				{0} // default
+				\butt,	{0},			// square end that doesn't overshoot endpoint, i.e. "butts" up angainst the endpoint
+				\flat,	{0},			// same as butt, as Qt calls it
+				\round, {1},			// round end that overshoots endpoint by half pen width, i.e. center of the brush stops on the endpoint
+				\square,{2},			// square end that overshoots endpoint by half pen width, i.e. center of the brush stops on the endpoint
+				{0} 							// default
 			)
 		}
 	}
@@ -60,12 +55,12 @@ RotaryRangeLayer : ValueViewLayer {
 	// define default properties in an Event as a class method
 	*properties {
 		^(
-			fill:		 true,
-			fillColor:	 Color.gray,
-			stroke:		 true,
-			strokeType:	 \around,		// \inside, \outside, \around
-			strokeColor: Color.black,
-			strokeWidth: 1,
+			fill:		 			true,
+			fillColor:		Color.gray,
+			stroke:				true,
+			strokeType:		\around, // \inside, \outside, \around
+			strokeColor:	Color.black,
+			strokeWidth:	1,
 		)
 	}
 
@@ -107,14 +102,14 @@ RotaryLevelLayer : ValueViewLayer {
 
 	*properties {
 		^(
-			stroke: 	 true,
-			strokeType:  \around,
-			strokeColor: Color.green,
-			strokeWidth: 2,
-			fill: 		 true,
-			fillColor: 	 Color.white,
-			capStyle:	 0, // flat
-			joinStyle:	 0,
+			stroke: 	 		true,
+			strokeType:  	\around,
+			strokeColor: 	Color.green,
+			strokeWidth: 	2,
+			fill: 		 		true,
+			fillColor: 	 	Color.white,
+			capStyle:	 		0, // flat
+			joinStyle:	 	0,
 		)
 	}
 
@@ -223,14 +218,10 @@ RotaryTickLayer : ValueViewLayer {
 
 	*properties {
 		^(
-			show: false,
-			// majTicks: [],
-			// minTicks: [],
-			// majTickVals: [],
-			// minTickVals: [],
+			show: 			false,
 			majorRatio: 0.25,
 			minorRatio: 0.15,
-			align: \outside,
+			align: 			\outside,
 			majorWidth: 1,
 			minorWidth: 0.5,
 			majorColor: Color.black,
@@ -283,17 +274,17 @@ RotaryHandleLayer : ValueViewLayer {
 
 	*properties {
 		^(
-			show:	true,
+			show:		true,
 			color:	Color.red,
 			width:	2,
 			radius:	3,
 			align:	\outside,
-			type:	\line, // line, circle, lineAndCircle, arrow
-			arrowLengthRatio: 0.3,
-			arrowWLRatio: 0.5,
-			fillArrow: true,
-			capStyle: \round,
-			joinStyle: \round,
+			type:		\line, // line, circle, lineAndCircle, arrow
+			arrowLengthRatio:	0.3,
+			arrowWLRatio:	0.5,
+			fillArrow:	true,
+			capStyle:		\round,
+			joinStyle:	\round,
 		)
 	}
 
@@ -356,7 +347,6 @@ RotaryHandleLayer : ValueViewLayer {
 				{view.wedgeWidth*p.align+view.innerRadius}
 			)
 		);
-
 
 		Pen.rotate(view.prStartAngle+(view.prSweepLength*view.input));
 		Pen.moveTo(rect.right@0);

@@ -40,15 +40,14 @@ r.showHandle = false
 r.showHandle = true
 r.handleType_(\circle)
 r.wrap =true
-line
 
 
-
+(
 r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.1).clickMode_(\relative).front;
 r.direction = \cw
 r.startAngle_(-0.7pi).sweepLength_(1.4pi).direction = \ccw
 r.direction = \cw
-
+)
 
 r.clickMode = \absolute
 r.clickMode = \relative
@@ -180,6 +179,10 @@ r.handle.type = \line
 r.handle.p.keys
 
 
+/* like SC's default knob */
+(
+r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.1).front;
+)
 (
 // continuous/wrapping knob
 r = Rotary(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.4).front;

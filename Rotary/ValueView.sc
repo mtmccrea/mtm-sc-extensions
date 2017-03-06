@@ -71,7 +71,8 @@ ValueView : View {
 	 * step vars describe the step amount
 	 * as a percentage of the range of the spec
 	 * e.g. keyStep of 0.05 means 20 key strokes
-	 * to cover the full range of the value */
+	 * to cover the full range of the value
+   */
 	var <>keyStep    = 0.03333333;				// scale step when arrow keys are pressed
 	var <>scrollStep = 0.01;					// scale _input_ step when scroll wheel moves
 
