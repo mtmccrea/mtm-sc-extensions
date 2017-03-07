@@ -72,7 +72,7 @@ RotaryTickLayer	/Users/admin/src/mtm-sc-extensions/Rotary/ValueViewLayer.sc	/^Ro
 *properties	/Users/admin/src/mtm-sc-extensions/Rotary/ValueViewLayer.sc	/^	*properties {$/;"	method	line:365
 fill	/Users/admin/src/mtm-sc-extensions/Rotary/ValueViewLayer.sc	/^	fill {}$/;"	method	line:380
 stroke	/Users/admin/src/mtm-sc-extensions/Rotary/ValueViewLayer.sc	/^	stroke {$/;"	method	line:382
-drawTicks	/Users/admin/src/mtm-sc-extensions/Rotary/ValueViewLayer.sc	/^	drawTicks {|ticks, tickLength, strokeWidth, color|$/;"	method	line:395
+drawTicks	/Users/admin/src/mtm-sc-extensions/Rotary/ValueViewLayer.sc	/^	drawTicks { |ticks, tickLength, strokeWidth, color|$/;"	method	line:395
 RotaryHandleLayer	/Users/admin/src/mtm-sc-extensions/Rotary/ValueViewLayer.sc	/^RotaryHandleLayer : ValueViewLayer {$/;"	class	line:422
 *properties	/Users/admin/src/mtm-sc-extensions/Rotary/ValueViewLayer.sc	/^	*properties {$/;"	method	line:424
 fill	/Users/admin/src/mtm-sc-extensions/Rotary/ValueViewLayer.sc	/^	fill {}$/;"	method	line:442

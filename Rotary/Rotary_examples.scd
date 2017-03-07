@@ -1,5 +1,5 @@
 (
-r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.1).clickMode_(\relative).front;
+r = RotaryView(bounds: Size(300, 300).asRect, innerRadius: 0.1).clickMode_(\relative).front;
 r.direction = \cw
 r.startAngle_(-0.7pi).sweepLength_(1.4pi).direction = \ccw
 r.direction = \cw
