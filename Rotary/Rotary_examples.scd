@@ -1,47 +1,3 @@
-r = Rotary(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.1).front;
-r.spec = [10, 100, \lin].asSpec;
-r.startAngle_(-0.75pi);
-r.sweepLength = 1.5pi;
-r.rangeFillColor = Color.new(0.9,0.9,0.9);
-r.strokeRange = true;
-r.fillRange = false;
-r.fillRange = true;
-r.showTicks = false
-r.showTicks = true
-r.showHandle_(true).handleColor_(Color.green);
-r.levelFillColor = Color.green.alpha_(0.2);
-r.strokeLevel = true;
-r.levelStroke = \outside;
-r.levelStrokeWidth = 3;
-r.valueFontSize = 36;
-r.valueAlign = \right;
-r.showTicks = true;
-r.numTicks = 5;
-r.tickColor = Color.gray;
-r.action = {|val| val.postln};
-
-r.innerRadiusRatio_(0.000001) // TODO
-r.innerRadiusRatio_(0.2) // TODO
-r.valueAlign = \bottom
-r.rangeStrokeWidth_(1)
-r.tickAlign = \center
-r.tickAlign = \outside
-r.tickAlign = \inside
-r.majorTickRatio = 0.2
-r.showValue = false
-r.strokeLevel =false
-r.fillLevel =true
-r.fillLevel =false
-r.strokeRange =true
-r.showTicks=false
-r.showTicks=true
-r.strokeRange = false
-r.showHandle = false
-r.showHandle = true
-r.handleType_(\circle)
-r.wrap =true
-
-
 (
 r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.1).clickMode_(\relative).front;
 r.direction = \cw
@@ -155,7 +111,7 @@ r.numTicks_(12, 3, endTick: false);
 r.ticks.minorColor = Color.gray;
 r.ticks.majorColor = Color.red;
 r.ticks.align = \center;
-r.ticks.majorRatio = 0.6;
+r.ticks.majorLength = 0.6;
 r.action = {|view, val, input| val.postln};
 r.direction = \ccw;
 r.wrap = true;
