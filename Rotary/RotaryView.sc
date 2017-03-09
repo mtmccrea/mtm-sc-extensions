@@ -148,9 +148,9 @@ RotaryView : ValueView {
 		stInput = input;*/
 		var pos, rad, radRel;
 		pos = (mMovePnt - cen);
-		rad = atan2(pos.y,pos.x);								// radian position, relative 0 at 3 o'clock
-		radRel = rad + 0.5pi * dirFlag;							//  " relative 0 at 12 o'clock, clockwise
-		radRel = (radRel - (startAngle*dirFlag)).wrap(0, 2pi);	//  " relative to start position
+		rad = atan2(pos.y,pos.x);					// radian position, relative 0 at 3 o'clock
+		radRel = rad + 0.5pi * dirFlag; 	// relative 0 at 12 o'clock, clockwise
+		radRel = (radRel - (startAngle*dirFlag)).wrap(0, 2pi); // relative to start position
 		if (radRel.inRange(0, sweepLength)) {
 			this.inputAction_(radRel/sweepLength); // triggers refresh
 			stValue = value;
@@ -161,9 +161,9 @@ RotaryView : ValueView {
 	respondToAbsoluteClick {
 		var pos, rad, radRel;
 		pos = (mouseDownPnt - cen);
-		rad = atan2(pos.y,pos.x);								// radian position, relative 0 at 3 o'clock
-		radRel = rad + 0.5pi * dirFlag;							//  " relative 0 at 12 o'clock, clockwise
-		radRel = (radRel - (startAngle*dirFlag)).wrap(0, 2pi);	//  " relative to start position
+		rad = atan2(pos.y,pos.x);					// radian position, relative 0 at 3 o'clock
+		radRel = rad + 0.5pi * dirFlag;		// relative 0 at 12 o'clock, clockwise
+		radRel = (radRel - (startAngle*dirFlag)).wrap(0, 2pi);	// relative to start position
 		if (radRel.inRange(0, sweepLength)) {
 			this.inputAction_(radRel/sweepLength); // triggers refresh
 			stValue = value;
@@ -177,15 +177,15 @@ RotaryView : ValueView {
 		direction = dir;
 		dirFlag = switch (direction, \cw, {1}, \ccw, {-1});
 		this.startAngle_(startAngle);
-		this.sweepLength_(sweepLength); // updates prSweepLength
+		this.sweepLength_(sweepLength);		// updates prSweepLength
 		this.refresh;
 	}
 
 	startAngle_ {|radians=0|
 		startAngle = radians;
-		prStartAngle = -0.5pi + startAngle;						// start angle always relative to 0 is up, cw
+		prStartAngle = -0.5pi + startAngle;		// start angle always relative to 0 is up, cw
 		this.setPrCenter;
-		this.ticksAtValues_(majTickVals, minTickVals, false);	// refresh the list of maj/minTicks positions
+		this.ticksAtValues_(majTickVals, minTickVals, false);		// refresh the list of maj/minTicks positions
 	}
 
 	setPrCenter {
@@ -202,10 +202,8 @@ RotaryView : ValueView {
 	sweepLength_ {|radians=2pi|
 		sweepLength = radians;
 		prSweepLength = sweepLength * dirFlag;
-		// valuePerRadian = spec.range / sweepLength;
 		this.setPrCenter;
 		this.ticksAtValues_(majTickVals, minTickVals, false); // refresh the list of maj/minTicks positions
-		// this.refresh;
 	}
 
 	orientation_ {|vertHorizOrCirc = \vertical|

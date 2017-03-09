@@ -136,7 +136,7 @@ RotaryRangeLayer : RotaryArcWedgeLayer {
 			strokeColor:	Color.gray,
 			strokeType:		\around, 			// if style: \wedge; \inside, \outside, or \around
 			strokeWidth:	1, 						// if style: \wedge, if < 1, assumed to be a normalized value and changes with view size, else treated as a pixel value
-			capStyle:			\round				// if style: \arc
+			capStyle:			\round,				// if style: \arc
 			joinStyle:	 	0,						// if style: \wedge; 0=flat
 		)
 	}

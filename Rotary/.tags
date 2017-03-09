@@ -1,46 +1,3 @@
-ValueView	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^ValueView : View {$/;"	class	line:59
-*new	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	*new { |parent, bounds, spec, initVal |$/;"	method	line:87
-superInit	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	superInit { |argSpec, initVal|$/;"	method	line:91
-stepByScroll	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	stepByScroll {$/;"	method	line:136
-stepByArrowKey	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	stepByArrowKey { |key|$/;"	method	line:147
-onClose_	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	onClose_ {|func|$/;"	method	line:164
-update	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	update { |changer, what ...args|$/;"	method	line:175
-drawFunc	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	drawFunc { this.subclassResponsibility(thisMethod) }$/;"	method	line:185
-value_	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	value_ {|val|$/;"	method	line:187
-input_	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	input_ {|normValue|$/;"	method	line:202
-valueAction_	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	valueAction_ {|val|$/;"	method	line:214
-inputAction_	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	inputAction_ {|normValue|$/;"	method	line:220
-broadcastState	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	broadcastState { |newValue=true|$/;"	method	line:226
-action_	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	action_ { |actionFunc|$/;"	method	line:241
-doAction	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	doAction { |newValue=true|$/;"	method	line:245
-spec_	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	spec_ {|controlSpec, updateValue=true|$/;"	method	line:251
-refresh	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	refresh {$/;"	method	line:263
-rangeInPixels_	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	rangeInPixels_ { |px|$/;"	method	line:284
-maxRefreshRate_	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	maxRefreshRate_ { |hz|$/;"	method	line:288
-RotaryView	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^RotaryView : ValueView {$/;"	class	line:1
-*new	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	*new {$/;"	method	line:23
-init	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	init {$/;"	method	line:29
-drawFunc	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	drawFunc {$/;"	method	line:79
-drawInThisOrder	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	drawInThisOrder {$/;"	method	line:92
-defineMouseActions	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	defineMouseActions {$/;"	method	line:102
-respondToLinearMove	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	respondToLinearMove {|dPx|$/;"	method	line:123
-respondToCircularMove	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	respondToCircularMove {|mMovePnt|$/;"	method	line:131
-respondToAbsoluteClick	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	respondToAbsoluteClick {$/;"	method	line:161
-direction_	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	direction_ {|dir=\\cw|$/;"	method	line:176
-startAngle_	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	startAngle_ {|radians=0|$/;"	method	line:184
-setPrCenter	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	setPrCenter {$/;"	method	line:191
-centerValue_	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	centerValue_ {|value|$/;"	method	line:196
-sweepLength_	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	sweepLength_ {|radians=2pi|$/;"	method	line:202
-orientation_	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	orientation_ {|vertHorizOrCirc = \\vertical|$/;"	method	line:211
-innerRadiusRatio_	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	innerRadiusRatio_ {|ratio|$/;"	method	line:215
-outerRadiusRatio_	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	outerRadiusRatio_ {|ratio|$/;"	method	line:220
-bipolar_	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	bipolar_ {|bool|$/;"	method	line:225
-boarderPad_	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	boarderPad_ { |px|$/;"	method	line:231
-ticksAt_	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	ticksAt_ {|majorRadPositions, minorRadPositions, show=true|$/;"	method	line:283
-ticksAtValues_	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	ticksAtValues_ {|majorVals, minorVals, show=true|$/;"	method	line:294
-ticksEveryVal_	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	ticksEveryVal_ {|valueHop, majorEvery=2|$/;"	method	line:305
-ticksEvery_	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	ticksEvery_ {|radienHop, majorEvery=2|$/;"	method	line:318
-numTicks_	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	numTicks_ {|num, majorEvery=2, endTick=true|$/;"	method	line:323
 ValueViewLayer	/Users/admin/src/mtm-sc-extensions/Rotary/ValueViewLayer.sc	/^ValueViewLayer {$/;"	class	line:1
 *new	/Users/admin/src/mtm-sc-extensions/Rotary/ValueViewLayer.sc	/^	*new { |valueView, initProperties|$/;"	method	line:4
 register	/Users/admin/src/mtm-sc-extensions/Rotary/ValueViewLayer.sc	/^	register {$/;"	method	line:8
@@ -83,3 +40,46 @@ drawArrow	/Users/admin/src/mtm-sc-extensions/Rotary/ValueViewLayer.sc	/^	drawArr
 radius_	/Users/admin/src/mtm-sc-extensions/Rotary/ValueViewLayer.sc	/^	radius_ {|px|$/;"	method	line:514
 align_	/Users/admin/src/mtm-sc-extensions/Rotary/ValueViewLayer.sc	/^	align_ {|where|$/;"	method	line:521
 style_	/Users/admin/src/mtm-sc-extensions/Rotary/ValueViewLayer.sc	/^	style_ {|style|$/;"	method	line:528
+RotaryView	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^RotaryView : ValueView {$/;"	class	line:1
+*new	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	*new {$/;"	method	line:23
+init	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	init {$/;"	method	line:29
+drawFunc	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	drawFunc {$/;"	method	line:79
+drawInThisOrder	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	drawInThisOrder {$/;"	method	line:92
+defineMouseActions	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	defineMouseActions {$/;"	method	line:102
+respondToLinearMove	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	respondToLinearMove {|dPx|$/;"	method	line:123
+respondToCircularMove	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	respondToCircularMove {|mMovePnt|$/;"	method	line:131
+respondToAbsoluteClick	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	respondToAbsoluteClick {$/;"	method	line:161
+direction_	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	direction_ {|dir=\\cw|$/;"	method	line:176
+startAngle_	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	startAngle_ {|radians=0|$/;"	method	line:184
+setPrCenter	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	setPrCenter {$/;"	method	line:191
+centerValue_	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	centerValue_ {|value|$/;"	method	line:196
+sweepLength_	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	sweepLength_ {|radians=2pi|$/;"	method	line:202
+orientation_	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	orientation_ {|vertHorizOrCirc = \\vertical|$/;"	method	line:209
+innerRadiusRatio_	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	innerRadiusRatio_ {|ratio|$/;"	method	line:213
+outerRadiusRatio_	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	outerRadiusRatio_ {|ratio|$/;"	method	line:218
+bipolar_	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	bipolar_ {|bool|$/;"	method	line:223
+boarderPad_	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	boarderPad_ { |px|$/;"	method	line:229
+ticksAt_	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	ticksAt_ {|majorRadPositions, minorRadPositions, show=true|$/;"	method	line:281
+ticksAtValues_	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	ticksAtValues_ {|majorVals, minorVals, show=true|$/;"	method	line:292
+ticksEveryVal_	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	ticksEveryVal_ {|valueHop, majorEvery=2|$/;"	method	line:303
+ticksEvery_	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	ticksEvery_ {|radienHop, majorEvery=2|$/;"	method	line:316
+numTicks_	/Users/admin/src/mtm-sc-extensions/Rotary/RotaryView.sc	/^	numTicks_ {|num, majorEvery=2, endTick=true|$/;"	method	line:321
+ValueView	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^ValueView : View {$/;"	class	line:59
+*new	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	*new { |parent, bounds, spec, initVal |$/;"	method	line:87
+superInit	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	superInit { |argSpec, initVal|$/;"	method	line:91
+stepByScroll	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	stepByScroll {$/;"	method	line:136
+stepByArrowKey	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	stepByArrowKey { |key|$/;"	method	line:147
+onClose_	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	onClose_ {|func|$/;"	method	line:164
+update	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	update { |changer, what ...args|$/;"	method	line:175
+drawFunc	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	drawFunc { this.subclassResponsibility(thisMethod) }$/;"	method	line:185
+value_	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	value_ {|val|$/;"	method	line:187
+input_	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	input_ {|normValue|$/;"	method	line:202
+valueAction_	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	valueAction_ {|val|$/;"	method	line:214
+inputAction_	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	inputAction_ {|normValue|$/;"	method	line:220
+broadcastState	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	broadcastState { |newValue=true|$/;"	method	line:226
+action_	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	action_ { |actionFunc|$/;"	method	line:241
+doAction	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	doAction { |newValue=true|$/;"	method	line:245
+spec_	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	spec_ {|controlSpec, updateValue=true|$/;"	method	line:251
+refresh	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	refresh {$/;"	method	line:263
+rangeInPixels_	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	rangeInPixels_ { |px|$/;"	method	line:284
+maxRefreshRate_	/Users/admin/src/mtm-sc-extensions/Rotary/ValueView.sc	/^	maxRefreshRate_ { |hz|$/;"	method	line:288

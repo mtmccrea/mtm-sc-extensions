@@ -73,16 +73,16 @@ ValueView : View {
 	 * e.g. keyStep of 0.05 means 20 key strokes
 	 * to cover the full range of the value
    */
-	var <>keyStep    = 0.03333333;				// scale step when arrow keys are pressed
-	var <>scrollStep = 0.01;					// scale _input_ step when scroll wheel moves
+	var <>keyStep    = 0.03333333; // scale step when arrow keys are pressed
+	var <>scrollStep = 0.01;       // scale _input_ step when scroll wheel moves
 
-	var <>xScrollDir = 1;						// change scroll direction, -1 or 1
-	var <>yScrollDir = -1;						// change scroll direction, -1 or 1, -1 is "natural" scrolling on Mac
-	var <>keyDirLR   = 1;						// change step direction of Left/Right arrow keys (1=right increments)
-	var <>keyDirUD   = 1;						// change step direction of Up/Down arrow keys (1=up increments)
+	var <>xScrollDir = 1;          // change scroll direction, -1 or 1
+	var <>yScrollDir = -1;         // change scroll direction, -1 or 1, -1 is "natural" scrolling on Mac
+	var <>keyDirLR   = 1;          // change step direction of Left/Right arrow keys (1=right increments)
+	var <>keyDirUD   = 1;          // change step direction of Up/Down arrow keys (1=up increments)
 
 	var <userView;
-	var <layers;								// array of drawing layers which respond to .properties
+	var <layers;                   // array of drawing layers which respond to .properties
 
 	*new { |parent, bounds, spec, initVal |
 		^super.new(parent, bounds).superInit(spec, initVal); //.init(*args)

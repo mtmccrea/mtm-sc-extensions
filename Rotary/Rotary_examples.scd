@@ -1,29 +1,47 @@
-(
 r = RotaryView(bounds: Size(300, 300).asRect, innerRadius: 0.1).clickMode_(\relative).front;
-r.direction = \cw
-r.startAngle_(-0.7pi).sweepLength_(1.4pi).direction = \ccw
-r.direction = \cw
-)
 
-r.clickMode = \absolute
-r.clickMode = \relative
+// test methods / functionality
+r.direction = \ccw;
+r.startAngle_(-0.7pi).sweepLength_(1.4pi).direction_(\cw);
 
-r.orientation = \circular
-r.orientation = \vertical
+r.clickMode = \absolute; // jump to value on click, note: makes sense to use this with orientation=\circular
+r.clickMode = \relative; // doesn't jump to click, move relative to starting click point
 
-r.bipolar = true
+r.orientation = \circular // position moves with radial mouse drag
+r.orientation = \vertical // position moves with vertical mouse drag
+r.orientation = \horizontal // position moves with horizontal mouse drag
+
+r.bipolar = true // center of movement defaults to spec.minval+spec.range.half
+// but can be set:
+r.centerValue_(0.7)
+r.centerValue
 r.bipolar = false
 
-r.handle.fillArrow = false
-r.handle.fillArrow = true
-r.handle.arrowWLRatio = 1
-r.handle.arrowLengthRatio = 0.7
-r.handle.align = 0.2
-r.step = 0.1;
-r.scrollStepMul = 0.2;
-r.arrowKeyStepMul = 1;
-r.scrollDir = -1;
+// when setting a property to a function, the property list
+// is passed into the function call, so other properties can be
+// accessed as well as the ".val" and ".input"
+r.level.fillColor = {|props| if (props.val > r.centerNorm) {Color.green.alpha_(0.3)} {Color.red.alpha_(0.3)}}
 
+// each drawing layer
+~layers = [r.range, r.level, r.handle, r.text, r.ticks];
+// ...has properties
+~layers.do{|me| me.class.postln; me.p.keysValuesDo{|k,v|postf("\t%,\t%\n", k,v)}}
+
+
+// stepping and movement behavior
+r.scrollStep = 0.005; 			// scale _input_ step on scroll movement, default: 0.01
+r.keyStep = 20.reciprocal; 	// this covers the range in 20 strokes
+
+r.xScrollDir = 1;					// change scroll direction, -1 or 1
+r.yScrollDir = -1;						// change scroll direction, -1 or 1, -1 is "natural" scrolling on Mac
+r.keyDirLR   = 1;						// change step direction of Left/Right arrow keys (1=right increments)
+r.keyDirUD   = 1;						// change step direction of Up/Down arrow keys (1=up increments)
+
+// Note the default movement will use the step resolution
+// built into the underlying spec. To get the values to step,
+// change the Rotary's (ValueView's) spec step:
+r.spec.step = 0.1;
+r.spec = [0, 20].asSpec
 r.handle.fill
 
 r.level.fillColor = {|me| if (me.val > r.centerNorm) {Color.green.alpha_(0.3)} {Color.red.alpha_(0.3)}}
