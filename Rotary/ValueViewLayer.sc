@@ -482,53 +482,34 @@ RotaryHandleLayer : ValueViewLayer {
 		h = view.wedgeWidth * p.length;
 		w = h * p.width;
 		rect = Size(h, w).asRect.center_(0@0); // note h<>w, rect starts at 3 o'clock
-
 		// define rect enclosing the arrow
 		// align determines location of the arrow's tip
 		rect = rect.right_(view.innerRadius + (view.wedgeWidth*p.anchor));
-		Pen.rotate(view.prStartAngle+(view.prSweepLength*view.input));
-		Pen.moveTo(rect.right@0);
-		Pen.lineTo(rect.leftBottom);
-		Pen.lineTo((rect.left+(h*0.1))@0);
-		Pen.lineTo(rect.leftTop);
-		Pen.lineTo(rect.right@0);
-
 		if (p.fill) {
+			Pen.push;
+			this.genArrowPath(rect);
 			Pen.fillColor = p.fillColor;
 			Pen.fill;
+			Pen.pop;
 		};
 		if (p.stroke) {
+			Pen.push;
+			this.genArrowPath(rect);
 			Pen.strokeColor = p.strokeColor;
 			Pen.width = p.strokeWidth;
 			Pen.joinStyle = this.getJoinIndex(p.joinStyle);
 			Pen.stroke;
+			Pen.pop;
 		};
 	}
 
-
-	/*
-		Set properties which require update
-		to view's boarder padding as necessary
-	*/
-
-	radius_ {|px|
-		p.radius = px;
-		// update boarder pad
-		if (p.style !='line') {view.boarderPad=view.boarderPad};
-		view.refresh;
+	genArrowPath {|rect|
+		Pen.rotate(view.prStartAngle+(view.prSweepLength*view.input));
+		Pen.moveTo(rect.right@0);
+		Pen.lineTo(rect.leftBottom);
+		Pen.lineTo((rect.left+(rect.height*0.1))@0);
+		Pen.lineTo(rect.leftTop);
+		Pen.lineTo(rect.right@0);
 	}
 
-	align_ {|where|
-		p.align = where;
-		// update boarder pad
-		if (p.style !='line') {view.boarderPad=view.boarderPad};
-		view.refresh;
-	}
-
-	style_ {|style|
-		p.style = style;
-		// update boarder pad
-		if (style !='line') {view.boarderPad=view.boarderPad};
-		view.refresh;
-	}
 }

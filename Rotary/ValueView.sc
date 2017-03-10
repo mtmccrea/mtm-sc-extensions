@@ -251,7 +251,7 @@ ValueView : View {
 	spec_ {|controlSpec, updateValue=true|
 		var rangeInPx = spec.range/valuePerPixel; // get old pixels per range
 		if (controlSpec.isKindOf(ControlSpec).not) {
-			"Spec provided isn't a ControlSpec. Spec isn't updated".warn;
+			"Spec provided isn't a ControlSpec. Spec isn't updated.".warn;
 			^this
 		};
 		spec = controlSpec;

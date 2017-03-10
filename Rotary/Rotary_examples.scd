@@ -12,8 +12,7 @@ r.orientation = \vertical // position moves with vertical mouse drag
 r.orientation = \horizontal // position moves with horizontal mouse drag
 
 r.bipolar = true // center of movement defaults to spec.minval+spec.range.half
-// but can be set:
-r.centerValue_(0.7)
+r.centerValue_(0.7) // but can be set:
 r.centerValue
 r.bipolar = false
 
@@ -56,46 +55,58 @@ r.level.fillColor = {|me| Color.hsv( me.val.lincurve(0,1,0.3,0.05,3), 0.7, 1, 1 
 
 /* radio dial */
 (
-r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.1).clickMode_(\relative).front;
+r = RotaryView(bounds: Size(300, 300).asRect, innerRadius: 0.2).clickMode_(\relative).front;
+// output
+r.spec = ControlSpec(1,5);
+r.spec.step = 1; // spec's step determins how the dial clicks into each position
+r.action = {|v, value, input| [v, value, input].postln}; // action: post self, value, and normalized input
+// shape
 r.startAngle_(-0.7pi).sweepLength_(1.4pi).direction = \cw;
-r.handle.type = \arrow;
-r.handle.arrowWLRatio_(0.7).arrowLengthRatio_(1.3).align_(0.95).color_(Color.hsv(0,0.8,0.9));
-// r.step = 0.2;
-r.clickMode = \absolute;
-r.orientation_(\circular);
-r.ticks.show = true;
-r.numTicks_(5, majorEvery: 1, endTick: true);
-r.ticks.majorColor = Color.black;
-r.range.fillColor = Color(*0.8!3);
-r.level.fill = false;
-r.level.strokeType_(\outside).strokeWidth_(8).strokeColor_(Color.hsv(0,1,0.6));
+// handle style: arrow
+r.handle.style = \arrow;
+r.handle.length_(0.4).width_(0.6).anchor_(0.95).color_(Color.hsv(0,0.8,0.9));
+// appearance
+r.level.show = false; // turn off the level "wedge"
+r.ticks.show = true; // show ticks
+r.numTicks_(5, majorEvery: 1, endTick: true); // 5 positions,
+r.ticks.majorLength_(0.3).majorWidth_(1.5);
+r.ticks.majorColor = Color.gray;
 r.text.align_(0.5@0.8).font_(Font("Monaco", 24));
-r.action = {|v, value, input| [value, input].postln};
-r.spec.step_(r.spec.range/4)
+// behavior
+r.clickMode = \absolute; // value follows mouse down position
+r.orientation_(\circular); // makes sense for a radio dial
 )
 
-// note, this will perform the action on every mouse move, even if it's the same value
-r.suppressRepeatedAction = false;
 // default behavior is to perform the action only if the value is new:
-r.suppressRepeatedAction = true;
+r.suppressRepeatedAction; // >> true
+// this filtering can be turned off so the action will be performed on every mouse move, even if it's the same value
+r.suppressRepeatedAction = false;
 
 (
 // variation on dial
-r.handle.type = \line;
-r.handle.width = 10;
-r.handle.capStyle = \round;
-r.handle.capStyle = \flat;
-r.handle.getCapIndex(\square);
+r.handle.style = \line;
+r.ticks.majorLength_(0.1).anchor_(0.95);
+r.handle.length_(0.45).anchor_(0.85).strokeWidth_(10);
+r.handle.capStyle = \round; // or \flat, or \square
+r.level.show_(true).stroke_(false).fill_(true).fillColor_(Color.red.alpha_(0.1));
+r.value_(4);
+r.suppressRepeatedAction = true;
 )
 (
 // variation on dial
-r.handle.type = \arrow;
-r.level.strokeType_(\around);
-r.handle.fillArrow = false;
-r.handle.width = 25;
-r.handle.joinStyle = \miter;
+r.innerRadiusRatio_(0); // no center gap
+r.background_(Color.blue);
+r.userView.background_(Color.white);
+r.range.stroke_(true).strokeWidth_(4).strokeType_(\outside;
+r.resize_(5);
+r.handle.style_(\arrow).length_(0.8).width_(0.6).anchor_(0.8-r.innerRadiusRatio);
+r.handle.fill = false;
+r.handle.stroke_(true).strokeWidth_(6);
+r.handle.fill_(true).fillColor_(Color.gray.alpha_(0.8));
 r.handle.joinStyle = \round;
-r.handle.joinStyle = \bevel;
+// r.handle.joinStyle = \miter;
+// r.handle.joinStyle = \bevel;
+r.level.show_(false);
 )
 (
 r.handle.type = \arrow;
@@ -106,6 +117,12 @@ r.handle.align = 0.95; // where does tip of arrow fall
 r.handle.arrowLengthRatio = 0.4;
 r.handle.arrowWLRatio = 0.4;
 r.level.stroke = false;
+)
+(
+r.spec.step = 0.5;
+r.numTicks_(9, majorEvery: 2, endTick:true);
+r.handle.style_(\circle).radius_(12);
+r.ticks.align_(\center).anchor_(r.handle.anchor).majorLength_(0.3);
 )
 
 

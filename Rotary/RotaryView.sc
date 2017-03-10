@@ -1,7 +1,7 @@
 RotaryView : ValueView {
 
 	// variables to be use by this class which don't need getters
-	var innerRadiusRatio, outerRadiusRatio, boarderPx, <boarderPad;
+	var <innerRadiusRatio, <outerRadiusRatio, boarderPx, <boarderPad;
 	var stValue, stInput, >clickMode;
 
 	// create variables with getters which you want
@@ -82,6 +82,7 @@ RotaryView : ValueView {
 			bnds = v.bounds;
 			cen  = bnds.center;
 			maxRadius = min(cen.x, cen.y) - boarderPx;
+			outerRadius = maxRadius * outerRadiusRatio;
 			innerRadius = maxRadius * innerRadiusRatio;
 			wedgeWidth = outerRadius - innerRadius;
 			levelSweepLength = if (bipolar,{input - centerNorm},{input}) * prSweepLength;
@@ -211,7 +212,7 @@ RotaryView : ValueView {
 	}
 
 	innerRadiusRatio_ {|ratio|
-		innerRadiusRatio = ratio;
+		innerRadiusRatio = if ((ratio == 0) and: (sweepLength < 2pi)) {1e-5} {ratio};
 		this.refresh
 	}
 
