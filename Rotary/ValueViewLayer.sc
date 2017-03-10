@@ -373,7 +373,8 @@ RotaryTickLayer : ValueViewLayer {
 			majorWidth: 	1,							// width of major tick, in pixels, TODO: this could be relative to windowSize if < 1
 			minorWidth: 	0.5,						// width of minor tick, realtive to majorWidth
 			majorColor: 	Color.black,
-			minorColor: 	Color.gray
+			minorColor: 	Color.gray,
+			capStyle:			\round
 		)
 	}
 
@@ -405,6 +406,7 @@ RotaryTickLayer : ValueViewLayer {
 		penEnd = penSt + tickLength;
 
 		Pen.push;
+		Pen.capStyle = this.getCapIndex(p.capStyle);
 		Pen.strokeColor_(color);
 		ticks.do{|tickPos|
 			Pen.width_(strokeWidth);

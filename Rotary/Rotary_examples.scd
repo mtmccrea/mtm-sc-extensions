@@ -1,4 +1,4 @@
-r = RotaryView(bounds: Size(300, 300).asRect, innerRadius: 0.1).clickMode_(\relative).front;
+r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.1).clickMode_(\relative).front;
 
 // test methods / functionality
 r.direction = \ccw;
@@ -55,7 +55,7 @@ r.level.fillColor = {|me| Color.hsv( me.val.lincurve(0,1,0.3,0.05,3), 0.7, 1, 1 
 
 /* radio dial */
 (
-r = RotaryView(bounds: Size(300, 300).asRect, innerRadius: 0.2).clickMode_(\relative).front;
+r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.2).clickMode_(\relative).front;
 // output
 r.spec = ControlSpec(1,5);
 r.spec.step = 1; // spec's step determins how the dial clicks into each position
@@ -128,47 +128,41 @@ r.ticks.align_(\center).anchor_(r.handle.anchor).majorLength_(0.3);
 
 /* continuoud/wrapping dial */
 (
-r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.1).front;
-r.innerRadiusRatio = 0.3;
-r.spec = [0, 360, \lin].asSpec;
-r.startAngle_(-0.0pi);
-r.sweepLength = 2pi;
+r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0).front;
+r.spec = [0, 360, \lin].asSpec; // output degrees 0 > 360
+r.startAngle_(-0.0pi).sweepLength_(2pi);
+r.direction = \ccw; // increment counter clockwise
+r.range.show = true;
 r.range.fillColor = Color.new(0.9,0.9,0.9);
 r.range.stroke = false;
-r.handle.show_(true).color_(Color.green);
-r.level.fill = false;
-r.level.stroke = false;
+r.handle.show_(true).strokeColor_(Color.green);
+r.level.show = false;
 r.text.fontSize = 36;
-r.text.align = 0.5@0.51;
-r.text.color = Color.red;
+r.text.align = 0.5@0.51; // slightly better center position
+r.text.color = Color.hsv(*(Color.red.asHSV*[1,1,0.6,1]));
 r.ticks.show = true;
-r.numTicks_(12, 3, endTick: false);
-r.ticks.minorColor = Color.gray;
-r.ticks.majorColor = Color.red;
-r.ticks.align = \center;
-r.ticks.majorLength = 0.6;
+r.numTicks_(16, 2, endTick: false);
+r.ticks.minorColor_(Color.gray).majorColor_(Color.red).majorWidth_(3).anchor_(0.98);
+r.handle.strokeWidth_(13);
+r.handle.strokeColor_(Color.hsv(0.5,1,0.8));
+r.ticks.align = \outside;
+r.ticks.capStyle = \round;
 r.action = {|view, val, input| val.postln};
-r.direction = \ccw;
-r.wrap = true;
-r.text.round = 1; // round the value of the displayed text
+r.clickMode = \absolute;
+r.orientation = \circular;
+r.wrap = true; // wrap through the zero crossing
+r.text.round = 0.1; // round the value of the displayed text
 r.scrollStep_(0.01); // percentage of the full range for each scroll step
 r.keyStep_(0.05); // percentage of the full range for each key step, 20 strokes per range in this case
 )
 
 (
-r.handle.align = \inside
-r.handle.align =0.91
-r.handle.type = \circle
+r.handle.style = \lineAndCircle;
+r.handle.strokeWidth = 15;
+r.handle.strokeColor_(Color.hsv(0.5,1,0.8));
+r.handle.radius_(r.handle.strokeWidth *0.3);
+r.handle.fillColor = Color.red;
 )
-(
-r.handle.type = \lineAndCircle
-r.handle.align =0.5;
-r.handle.radius = 8;
-)
-
-r.handle.type = \line
-r.handle.p.keys
-
 
 /* like SC's default knob */
 (

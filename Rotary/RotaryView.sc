@@ -21,8 +21,8 @@ RotaryView : ValueView {
 
 
 	*new {
-		|parent, bounds, spec, initVal, startAngle=0, sweepLength=2pi, innerRadius=0, outerRadius=1|
-		^super.new(parent, bounds, spec, initVal).init(startAngle, sweepLength, innerRadius, outerRadius);
+		|parent, bounds, spec, initVal, startAngle=0, sweepLength=2pi, innerRadiusRatio=0, outerRadiusRatio=1|
+		^super.new(parent, bounds, spec, initVal).init(startAngle, sweepLength, innerRadiusRatio, outerRadiusRatio);
 	}
 
 
@@ -42,8 +42,6 @@ RotaryView : ValueView {
 
 		layers = [range, level, text, ticks, handle];
 
-		innerRadiusRatio = argInnerRadiusRatio;
-		outerRadiusRatio = argOuterRadiusRatio;
 		startAngle = argStartAngle;		// reference 0 is UP
 		sweepLength = argSweepLength;
 		direction = \cw;
@@ -53,6 +51,9 @@ RotaryView : ValueView {
 		clickMode = \relative;			// or \absolute
 		boarderPad = 1;
 		boarderPx = boarderPad;
+
+		this.innerRadiusRatio_(argInnerRadiusRatio); // set innerRadiusRatio with setter to check sweepLength condition
+		this.outerRadiusRatio_(argOuterRadiusRatio);
 
 		// intialize pixel unit variables
 		maxRadius = this.bounds.width/2;
@@ -204,6 +205,7 @@ RotaryView : ValueView {
 		sweepLength = radians;
 		prSweepLength = sweepLength * dirFlag;
 		this.setPrCenter;
+		this.innerRadiusRatio_(innerRadiusRatio); // update innerRadiusRatio in case this was set to 0
 		this.ticksAtValues_(majTickVals, minTickVals, false); // refresh the list of maj/minTicks positions
 	}
 
@@ -212,7 +214,8 @@ RotaryView : ValueView {
 	}
 
 	innerRadiusRatio_ {|ratio|
-		innerRadiusRatio = if ((ratio == 0) and: (sweepLength < 2pi)) {1e-5} {ratio};
+		// innerRadiusRatio = if ((ratio == 0) and: (sweepLength < 2pi)) {1e-5} {ratio};
+		innerRadiusRatio = if (ratio == 0) {1e-5} {ratio};
 		this.refresh
 	}
 
