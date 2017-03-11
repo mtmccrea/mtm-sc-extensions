@@ -166,11 +166,20 @@ r.handle.fillColor = Color.red;
 
 /* like SC's default knob */
 (
-r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.1).front;
+r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0).front;
+r.startAngle_(-0.8pi).sweepLength_(1.6pi);
+r.outline.show_(true).radius_(0.75);
+r.outline.fill_(true).fillColor_(Color.white.alpha_(0.3));
+r.outline.stroke_(true).strokeColor_(Color.gray).strokeWidth_(5);
+r.handle.style_(\line).capStyle_(\round).strokeWidth_(12).anchor_(0.6);
+// TODO: make handle size a normalized ratio so it changes with resize
+r.text.show = false;
+r.level.style_(\arc).width_(0.1).capStyle_(\round).fillColor_(Color.green);
+r.range.style_(\arc).width_(0.1).capStyle_(\round);
 )
 (
 // continuous/wrapping knob
-r = Rotary(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.4).front;
+r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.4).front;
 r.spec = [0, 360, \lin].asSpec;
 r.startAngle_(0.0pi);
 r.sweepLength = 2pi;

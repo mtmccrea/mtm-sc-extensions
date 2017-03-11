@@ -16,7 +16,7 @@ RotaryView : ValueView {
 	var <majTicks, <minTicks, majTickVals, minTickVals;
 
 	// drawing layers. Add getters to get/set individual properties by '.p'
-	var <range, <level, <text, <ticks, <handle;
+	var <range, <level, <text, <ticks, <handle, <outline;
 
 
 
@@ -32,15 +32,16 @@ RotaryView : ValueView {
 		// REQUIRED: in subclass init, initialize drawing layers
 
 		// initialize layer classes and save them to vars
-		#range, level, text, ticks, handle = [
+		#range, level, text, ticks, handle, outline = [
 			RotaryRangeLayer, RotaryLevelLayer, RotaryTextLayer,
-			RotaryTickLayer, RotaryHandleLayer
+			RotaryTickLayer, RotaryHandleLayer, RotaryOutlineLayer
 		].collect({
 			|class|
 			class.new(this, class.properties)
 		});
 
-		layers = [range, level, text, ticks, handle];
+		// convenience variable to access a list of the layers
+		layers = [range, level, text, ticks, handle, outline];
 
 		startAngle = argStartAngle;		// reference 0 is UP
 		sweepLength = argSweepLength;
@@ -92,12 +93,16 @@ RotaryView : ValueView {
 	}
 
 	drawInThisOrder {
+		if (outline.p.show) {
+			if (outline.p.fill) {outline.fill};
+			if (outline.p.stroke) {outline.stroke};
+		};
 		if (range.p.show and: range.p.fill) {range.fill};
 		if (level.p.show and: level.p.fill) {level.fill};
 		if (ticks.p.show) {ticks.fill; ticks.stroke};
 		if (range.p.show and: range.p.stroke) {range.stroke};
 		if (level.p.show and: level.p.stroke) {level.stroke};
-		if (handle.p.show) {handle.fill; handle.stroke};
+		if (handle.p.show) {handle.stroke}; // fill isn't used because they need not be drawn separately
 		if (text.p.show) {text.fill; text.stroke};
 	}
 

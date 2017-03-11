@@ -13,11 +13,21 @@ ValueViewLayer {
 	doesNotUnderstand {|selector, value|
 		var asGetter = selector.asGetter;
 
-		if (selector.isSetter and: p[asGetter].notNil) {
-			p[asGetter] = value;
-			this.changed(\layerProperty, asGetter, value);
+		if (selector.isSetter) {
+			if (p[asGetter].notNil) {
+				p[asGetter] = value;
+				this.changed(\layerProperty, asGetter, value);
+			} {
+				format("'%'' property not found", asGetter).warn;
+				// return self. TODO: return nil?
+			}
 		} {
-			^p[selector];
+			if(p[asGetter].notNil) {
+				^p[selector];
+			} {
+				format("'%'' property not found", asGetter).warn;
+				// return self. TODO: return nil?
+			}
 		};
 	}
 
@@ -76,6 +86,7 @@ RotaryArcWedgeLayer : ValueViewLayer {
 			\arc, {
 				arcStrokeWidth = view.wedgeWidth*p.width;
 				arcStrokeRadius = (view.wedgeWidth*p.radius) + view.innerRadius - (arcStrokeWidth*0.5);
+				Pen.strokeColor_(p.fillColor); // TODO: cchange to strokeColor?
 				Pen.capStyle_(this.getCapIndex(p.capStyle));
 				Pen.width_(arcStrokeWidth);
 				Pen.addArc(view.cen, arcStrokeRadius, sweepFrom, sweepLength);
@@ -127,6 +138,7 @@ RotaryRangeLayer : RotaryArcWedgeLayer {
 		^(
 			show:					true,					// show this layer or not
 			style:				\wedge,				// \wedge or \arc: annularWedge or arc
+																	// note if \arc, the width follows .width, not strokeWidth
 			width:				1,						// width of either annularWedge or arc; relative to wedgeWidth
 			radius:				1,						// outer edge of the wedge or arc; relative to maxRadius
 																	// TODO: rename this?
@@ -146,7 +158,14 @@ RotaryRangeLayer : RotaryArcWedgeLayer {
 	}
 
 	stroke {
-		this.strokeFromLength(view.prStartAngle, view.prSweepLength)
+		if (p.style == \wedge) {
+			this.strokeFromLength(view.prStartAngle, view.prSweepLength)
+		} {
+			if (p.fill.not) {
+				// fill takes care of the arc, so stroke calls fill if .fill isn't explicitly set
+				this.fillFromLength(view.prStartAngle, view.prSweepLength)
+			}
+		}
 	}
 /*
 	fill {
@@ -237,7 +256,14 @@ RotaryLevelLayer : RotaryArcWedgeLayer {
 	}
 
 	stroke {
-		this.strokeFromLength(this.getStartAngle, view.levelSweepLength)
+		if (p.style == \wedge) {
+			this.strokeFromLength(this.getStartAngle, view.levelSweepLength)
+		} {
+			if (p.fill.not) {
+				// fill takes care of the arc, so stroke calls fill if .fill isn't explicitly set
+				this.fillFromLength(this.getStartAngle, view.levelSweepLength)
+			}
+		}
 	}
 /*
 	fill {
@@ -425,23 +451,25 @@ RotaryHandleLayer : ValueViewLayer {
 
 	*properties {
 		^(
-			show:		true,							// show handle or not
-			style:	\line,	 					// \line, \circle, or \arrow
-			fill:		true,							// if style = \circle or \arrow
-			fillColor: Color.red,
-			stroke: true,							// if style = \circle or \arrow
+			show:				true,					// show handle or not
+			style:			\line,	 			// \line, \circle, or \arrow
+			fill:				true,					// if style = \circle or \arrow
+			fillColor:	Color.red,
+			stroke:			true,					// if style = \circle or \arrow
 			strokeColor: Color.black,
-			strokeWidth:	2,					// if style = \line or \circle
-			radius:	3,								// if style = \circle
-			length: 0.3,							// if style = \line or \arrow
-			width: 0.6,								// if style = \arrow, relative to length (width of 1 = length)
-			anchor: 0.9,							// where the outer end of the handle is anchored, 0>1, relative to wedgeWidth
+			strokeWidth: 2,						// if style = \line or \circle
+			radius:			3,						// if style = \circle
+			length: 		0.3,					// if style = \line or \arrow
+			width:			0.6,					// if style = \arrow, relative to length (width of 1 = length)
+			anchor:			0.9,					// where the outer end of the handle is anchored, 0>1, relative to wedgeWidth
 			capStyle:		\round,				// if style = \line
 			joinStyle:	\round,				// if style = \arrow
 		)
 	}
 
-	fill {}
+	// fill need not be called, stroke does everything needed
+	// (assumes the fill and stroke are done at the same time)
+	fill {this.stroke}
 
 	stroke {
 		var cen;
@@ -514,4 +542,36 @@ RotaryHandleLayer : ValueViewLayer {
 		Pen.lineTo(rect.right@0);
 	}
 
+}
+
+RotaryOutlineLayer : RotaryArcWedgeLayer {
+
+	*properties {
+		^(
+			show:					false,
+			radius:				1,						// outer edge of the wedge or arc; relative to maxRadius (1)
+			fill: 		 		false,				// if style: \wedge
+			fillColor: 	 	Color.white,
+			stroke: 	 		true,
+			strokeColor: 	Color.black,
+			strokeWidth: 	2,						// if style: \wedge, if < 1, assumed to be a normalized value and changes with view size, else treated as a pixel value
+		)
+	}
+
+	stroke {
+		var d, rect;
+		d = p.radius*view.outerRadius*2;
+		rect = Size(d, d).asRect;
+		rect = rect.center_(view.cen);
+		if (p.fill) {Pen.fillColor = p.fillColor; Pen.fillOval(rect)};
+		if (p.stroke) {
+			Pen.width_(p.strokeWidth);
+			Pen.strokeColor = p.strokeColor;
+			Pen.strokeOval(rect)
+		};
+	}
+
+	// fill need not be called, stroke does everything needed
+	// (assumes the fill and stroke are done at the same time)
+	fill {this.stroke}
 }
