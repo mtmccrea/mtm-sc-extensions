@@ -1,3 +1,6 @@
+// TODO: make strokeWith (like line handle, arrow, level, range outlines) relative to view size
+// create a focus function for each, i.e. a change in properties when view is active
+
 RotaryView : ValueView {
 
 	// variables to be use by this class which don't need getters

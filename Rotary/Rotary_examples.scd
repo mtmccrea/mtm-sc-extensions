@@ -177,6 +177,7 @@ r.text.show = false;
 r.level.style_(\arc).width_(0.1).capStyle_(\round).fillColor_(Color.green);
 r.range.style_(\arc).width_(0.1).capStyle_(\round);
 )
+
 (
 // continuous/wrapping knob
 r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.4).front;
