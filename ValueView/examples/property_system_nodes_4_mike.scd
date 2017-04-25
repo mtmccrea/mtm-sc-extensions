@@ -2,8 +2,8 @@
 (
 ~default = (
 	baseHue: 		Color.red,
-	fillColor:		{ Color.hsv(1, 1, 0.5).hueBlend(~baseHue, 0.5) },
-	strokeColor:	{ Color.hsv(1, 1, 1).hueBlend(~baseHue, 1) }
+	fillColor:		{ Color.hsv(1, 1, 0.5).hueBlend(~baseHue.value, 0.5) },
+	strokeColor:	{ Color.hsv(1, 1, 1).hueBlend(~baseHue.value, 1) }
 );
 
 // Use .use to ensure ~environmentVariables get resolved using the event (~default)
@@ -105,7 +105,7 @@ actualProperties = properties.use {
 	properties.collect {
 		|value|
 		value.value(properties); // first argument when calling value for each item is supposed to be the event - in this case, our props
-	}
+	};
 };
 actualProperties.postln;
 )
@@ -123,6 +123,10 @@ defaults = (
 	baseHue: 		Color.red,
 	fillColor:		{ Color.hsv(1, 1, 0.5).hueBlend(~baseHue, 0.5) },
 	strokeColor:	{ Color.hsv(1, 1, 1).hueBlend(~baseHue, 1) }
+	/* alternate approach, which removes need to call env.use below when executing these functions
+	props is "this" property list, and would need to be passed to the function when called */
+	// fillColor:	{ |props| Color.hsv(1, 1, 0.5).hueBlend(props.baseHue, 0.5) },
+	// strokeColor:	{ |props| Color.hsv(1, 1, 1).hueBlend(props.baseHue, 1) }
 );
 
 // set by the user
@@ -140,16 +144,22 @@ frozenProperties = defaults.composeEvents(userProperties);
 "Composed props list: %".format(frozenProperties).postln;
 
 // then, resolve the actual property values
-frozenProperties = frozenProperties.use {
-	frozenProperties.collect { |val, key| val.value(frozenProperties) }
-};
-"Frozen props list: %".format(frozenProperties).postln;
 
+frozenProperties = frozenProperties.use { // gives access to local env vars, e.g. ~baseHue
+	frozenProperties.collect { |val, key| [val, key].postln; val.value(frozenProperties) };
+};
+/* or, if strokeColor is defined above as:
+strokeColor:	{ |props| Color.hsv(1, 1, 1).hueBlend(props.baseHue, 1) } */
+// frozenProperties = frozenProperties.collect { |val, key| [val, key].postln; val.value(frozenProperties) };
+
+"Frozen props list: %".format(frozenProperties).postln;
+frozenProperties[\fillColor].argNames.postln;
 
 // Now, you can use frozenProperties at draw time, and your ref'd function will get executed:
 frozenProperties.fillColor(0.5).postln;
 frozenProperties.fillColor(0.1).postln;
 frozenProperties.fillColor(1.0).postln;
+
 
 // You could also consider setting the knob value as a property at draw time, such that specialty draw-time functions could
 // simply access it via the environment / the props arg. then you could do:
