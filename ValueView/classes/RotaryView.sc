@@ -1,5 +1,4 @@
-// TODO: make strokeWith (like line handle, arrow, level, range outlines) relative to view size
-// create a focus function for each, i.e. a change in properties when view is active
+// TODO: create a focus function for each, i.e. a change in properties when view is active
 
 RotaryView : ValueView {
 
@@ -69,9 +68,6 @@ RotaryView : ValueView {
 		centerValue = spec.minval+spec.range.half;
 		centerNorm = spec.unmap(centerValue);
 
-		// valuePerPixel = spec.range / 200; // for interaction: movement range in pixels to cover full spec range
-		// valuePerRadian = spec.range / sweepLength;
-
 		majTicks = [];
 		minTicks = [];
 		majTickVals = [];
@@ -139,23 +135,6 @@ RotaryView : ValueView {
 
 	// radial change, relative to center
 	respondToCircularMove {|mMovePnt|
-	/*	var stPos, endPos, stRad, endRad, dRad, delta;
-		stPos = (mouseDownPnt - cen);
-		stRad = atan2(stPos.y,stPos.x);
-		endPos = (mMovePnt - cen);
-		endRad = atan2(endPos.y, endPos.x);
-		delta = endRad - stRad;
-		// dRad = delta.fold(0, pi) * dirFlag * delta.sign;
-		dRad = delta.fold(0, pi) * dirFlag * delta.isPositive.if({1},{-1});
-		postf("st: %, end: %, delta: %, delta_mapped: %\n",stRad, endRad, delta, dRad);
-		if (dRad !=0) {
-			this.input_(stInput + (dRad/sweepLength));			// triggers refresh
-			this.doAction;
-		};
-		// allow continuous updating of relative start point
-		mouseDownPnt = mMovePnt;
-		stValue = value;
-		stInput = input;*/
 		var pos, rad, radRel;
 		pos = (mMovePnt - cen);
 		rad = atan2(pos.y,pos.x);					// radian position, relative 0 at 3 o'clock
@@ -222,7 +201,6 @@ RotaryView : ValueView {
 	}
 
 	innerRadiusRatio_ {|ratio|
-		// innerRadiusRatio = if ((ratio == 0) and: (sweepLength < 2pi)) {1e-5} {ratio};
 		innerRadiusRatio = if (ratio == 0) {1e-5} {ratio};
 		this.refresh
 	}
@@ -236,58 +214,6 @@ RotaryView : ValueView {
 		bipolar = bool;
 		this.refresh;
 	}
-
-/* NO LONGER NECESSARY NOW THAT outerRadius can be defined
-	boarderPad_ { |px|
-		var align, overhang, alignRadius;
-		align = handle.align;
-		boarderPad = px;
-		boarderPx = if (handle.type==\line)
-		{boarderPad}
-		{
-			if (align==\outside)
-			{boarderPx + handle.radius}
-			{
-				if (align.isKindOf(Number))
-				{
-					overhang = max(0, ((wedgeWidth * align) + (handle.radius)) - wedgeWidth);
-					overhang + boarderPad
-				}
-				{boarderPad}
-			}
-		};
-	}
-*/
-	/* Ticks */
-
-	// showTicks_ {|bool|
-	// 	showTicks = bool;
-	// 	this.refresh;
-	// }
-	//
-	// majorTickRatio_ {|ratio = 0.25|
-	// 	majorTickRatio = ratio;
-	// 	this.refresh;
-	// }
-	//
-	// minorTickRatio_ {|ratio = 0.15|
-	// 	minorTickRatio = ratio;
-	// 	this.refresh;
-	// }
-	//
-	// // \inside, \outside, \center
-	// tickAlign_ {|insideOutSideCenter|
-	// 	case
-	// 	{
-	// 		(insideOutSideCenter == \inside) or:
-	// 		(insideOutSideCenter == \outside) or:
-	// 		(insideOutSideCenter == \center)
-	// 	} {
-	// 		tickAlign = insideOutSideCenter;
-	// 		this.refresh;
-	// 	}
-	// 	{ "Rotary:tickAlign_ : Invalid align argument. Must be 'inside', 'outside' or 'center'".warn }
-	// }
 
 	// arrays of radian positions, reference from startAngle
 	ticksAt_ {|majorRadPositions, minorRadPositions, show=true|
