@@ -156,6 +156,174 @@ r.scrollStep_(0.01); // percentage of the full range for each scroll step
 r.keyStep_(0.05); // percentage of the full range for each key step, 20 strokes per range in this case
 )
 
+/* continuoud/wrapping dial for xform display */
+(
+r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0).front;
+r.spec = [0, 2pi, \lin].asSpec; // output degrees 0 > 360
+r.startAngle_(-0.0pi).sweepLength_(2pi);
+r.direction = \ccw; // increment counter clockwise
+
+r.range.show = true;
+// r.range.fill = false;
+r.range.fill = true;
+r.range.fillColor = Color.new(0.9,0.9,0.9).alpha_(0.8);
+r.range.stroke = true;
+r.range.strokeType = \outside;
+// r.range.strokeWidth = 3;
+r.range.strokeWidth = 0.025; // if <1 it's a normalized value, relative to the min(width, height) of the view
+
+r.handle.show_(true).strokeColor_(Color.green);
+r.handle.strokeWidth = 0.12;
+
+r.handle.style = \arrow;
+r.handle.anchor = 0.75;
+r.handle.length = 0.45;
+r.handle.joinStyle_(\round)
+r.handle.joinStyle_(\flat)
+r.handle.stroke = true;
+r.handle.fillColor = Color.hsv(0.27,0.8,0.8);
+r.handle.strokeColor = Color.hsv(0.27,0.9,0.8);
+r.handle.strokeWidth = 0.05;
+
+r.handle.fillColor = Color.hsv(0.27,1,0.8);
+
+
+r.level.show = false;
+r.text.show = false;
+
+r.ticks.show = true;
+r.numTicks_(360/22.5, 2, endTick: false);
+r.ticks.minorColor_(Color.new255(*200!3)).majorColor_(Color.new255(*150!3));
+r.ticks.majorWidth_(0.09); // if <1 it's a normalized value, relative to the min(width, height) of the view
+// r.ticks.anchor_(0.7).align_(\center)
+r.ticks.anchor_(0.85).align_(\outside);
+r.ticks.majorLength = 0.1;
+r.ticks.minorLength = 0.8;
+r.ticks.capStyle = \round;
+
+r.action = {|view, val, input| val.postln};
+r.clickMode = \absolute;
+r.orientation = \circular;
+r.wrap = true; // wrap through the zero crossing
+r.text.round = 0.1; // round the value of the displayed text
+r.scrollStep_(0.01); // percentage of the full range for each scroll step
+// r.keyStep_(0.05); // percentage of the full range for each key step, 20 strokes per range in this case
+r.keyStep_(45.reciprocal); // percentage of the full range for each key step, 20 strokes per range in this case
+)
+
+/* continuoud/wrapping dial for xform display - azimuth*/
+(
+r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0).front;
+r.spec = [0, 2pi, \lin].asSpec; // output degrees 0 > 360
+r.startAngle_(-0.0pi).sweepLength_(2pi);
+r.direction = \ccw; // increment counter clockwise
+
+r.range.show = true;
+// r.range.fill = false;
+r.range.fill = true;
+r.range.fillColor = Color.new(0.9,0.9,0.9).alpha_(0.8);
+r.range.stroke = false;
+
+r.handle.show_(true).strokeColor_(Color.green);
+r.handle.strokeWidth = 0.12;
+
+r.handle.style = \arrow;
+r.handle.anchor = 0.6;
+r.handle.length = 0.45;
+// r.handle.joinStyle_(\round)
+r.handle.joinStyle_(\flat);
+r.handle.stroke = true;
+r.handle.fillColor = Color.hsv(0.27,0.8,0.8);
+r.handle.strokeColor = Color.hsv(0.27,0.9,0.8);
+r.handle.strokeWidth = 0.05;
+
+r.handle.fillColor = Color.hsv(0.27,1,0.8);
+
+r.level.show = false;
+r.text.show = false;
+
+r.ticks.show = true;
+r.numTicks_(360/22.5, 2, endTick: false);
+r.ticks.minorColor_(Color.new255(*200!3)).majorColor_(Color.new255(*150!3));
+r.ticks.majorWidth_(0.09); // if <1 it's a normalized value, relative to the min(width, height) of the view
+// r.ticks.anchor_(0.7).align_(\center)
+r.ticks.anchor_(0.92).align_(\outside);
+r.ticks.majorLength = 0.1;
+r.ticks.minorLength = 0.8;
+r.ticks.capStyle = \round;
+
+r.action = {|view, val, input| val.postln};
+r.clickMode = \absolute;
+r.orientation = \circular;
+r.wrap = true; // wrap through the zero crossing
+r.text.round = 0.1; // round the value of the displayed text
+r.scrollStep_(0.01); // percentage of the full range for each scroll step
+r.keyStep_(45.reciprocal); // percentage of the full range for each key step, 20 strokes per range in this case
+
+r.outline.show = true;
+r.outline.strokeWidth = 0.015;
+r.outline.radius = 0.7
+)
+
+/* continuoud/wrapping dial for xform display - elevations */
+(
+r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0).front;
+r.spec = [-pi/2, pi/2, \lin].asSpec; // output degrees 0 > 360
+r.startAngle_(-1.0pi).sweepLength_(pi);
+r.direction = \ccw; // increment counter clockwise
+
+r.range.show = true;
+// r.range.fill = false;
+r.range.fill = true;
+r.range.fillColor = Color.new(0.9,0.9,0.9).alpha_(0.8);
+r.range.stroke = true;
+r.range.strokeWidth_(0.015)
+r.range.strokeType = \inside;
+r.range.width = 1
+r.innerRadiusRatio_(0.0)
+
+r.handle.show_(true).strokeColor_(Color.green);
+r.handle.strokeWidth = 0.12;
+
+r.handle.style = \arrow;
+r.handle.anchor = 0.5;
+r.handle.length = 0.45;
+// r.handle.joinStyle_(\round)
+r.handle.joinStyle_(\flat);
+r.handle.stroke = true;
+r.handle.fillColor = Color.hsv(0.27,0.8,0.8);
+r.handle.strokeColor = Color.hsv(0.27,0.9,0.8);
+r.handle.strokeWidth = 0.05;
+
+r.handle.fillColor = Color.hsv(0.27,1,0.8);
+
+r.level.show = false;
+r.text.show = false;
+
+r.ticks.show = true;
+r.numTicks_(180/22.5+1, 2, endTick: true);
+r.ticks.minorColor_(Color.new255(*200!3)).majorColor_(Color.new255(*150!3));
+r.ticks.majorWidth_(0.09); // if <1 it's a normalized value, relative to the min(width, height) of the view
+// r.ticks.anchor_(0.7).align_(\center)
+r.ticks.anchor_(0.92).align_(\outside);
+r.ticks.majorLength = 0.1;
+r.ticks.minorLength = 0.8;
+r.ticks.capStyle = \round;
+
+r.action = {|view, val, input| val.postln};
+r.clickMode = \absolute;
+r.orientation = \circular;
+r.wrap = false; // wrap through the zero crossing
+r.text.round = 0.1; // round the value of the displayed text
+r.scrollStep_(0.01); // percentage of the full range for each scroll step
+r.keyStep_(45.reciprocal); // percentage of the full range for each key step, 20 strokes per range in this case
+
+r.outline.show = false;
+r.outline.strokeWidth = 0.015;
+r.outline.radius = 0.6
+)
+
+
 (
 r.handle.style = \lineAndCircle;
 r.handle.strokeWidth = 15;

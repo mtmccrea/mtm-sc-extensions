@@ -86,7 +86,7 @@ RotaryArcWedgeLayer : ValueViewLayer {
 			\arc, {
 				arcStrokeWidth = view.wedgeWidth*p.width;
 				arcStrokeRadius = (view.wedgeWidth*p.radius) + view.innerRadius - (arcStrokeWidth*0.5);
-				Pen.strokeColor_(p.fillColor); // TODO: cchange to strokeColor?
+				Pen.strokeColor_(p.fillColor); 																	// TODO: change to strokeColor?
 				Pen.capStyle_(this.getCapIndex(p.capStyle));
 				Pen.width_(arcStrokeWidth);
 				Pen.addArc(view.cen, arcStrokeRadius, sweepFrom, sweepLength);
@@ -167,64 +167,6 @@ RotaryRangeLayer : RotaryArcWedgeLayer {
 			}
 		}
 	}
-/*
-	fill {
-		var arcStrokeWidth, arcStrokeRadius;
-		Pen.fillColor_(p.fillColor);
-		switch (p.style,
-			\wedge, {
-			Pen.addAnnularWedge(
-				view.cen, view.outerRadius - (view.wedgeWidth*p.width),
-				view.outerRadius*p.radius,
-				view.prStartAngle, view.prSweepLength
-			);
-			Pen.fill;
-		},
-		\arc, {
-			arcStrokeWidth = view.wedgeWidth*p.width;
-			arcStrokeRadius = (view.wedgeWidth*p.radius) + view.innerRadius - (arcStrokeWidth*0.5);
-			Pen.capStyle_(this.getCapIndex(p.capStyle));
-			Pen.width_(arcStrokeWidth);
-			Pen.addArc(view.cen, arcStrokeRadius, view.prStartAngle, view.prSweepLength)
-			Pen.stroke;
-		},
-		{"style property doesn't match either \wedge or \arc".warn}
-	);
-	}
-
-	stroke {
-		var inset, strokeWidth;
-		Pen.push;
-		Pen.strokeColor_(p.strokeColor);
-		strokeWidth = if (p.strokeWidth<1){p.strokeWidth*view.maxRadius}{p.strokeWidth};
-		Pen.width_(strokeWidth);
-		// inset accounts for pen width overshooting the outer radius
-		inset = strokeWidth*0.5;
-		Pen.capStyle_(this.getCapIndex(p.capStyle));
-		switch (p.strokeType,
-			\around, {
-				Pen.joinStyle = this.getJoinIndex(p.joinStyle);
-				Pen.addAnnularWedge(view.cen, view.innerRadius, view.outerRadius-inset, view.prStartAngle, view.prSweepLength);
-			},
-			\inside, {
-				Pen.capStyle = this.getCapIndex(p.capStyle);
-				Pen.addArc(view.cen, view.innerRadius+inset, view.prStartAngle, view.prSweepLength);
-			},
-			\outside, {
-				Pen.capStyle = this.getCapIndex(p.capStyle);
-				Pen.addArc(view.cen, view.outerRadius-inset, view.prStartAngle, view.prSweepLength);
-			},
-			\insideOutside, {
-				Pen.capStyle = this.getCapIndex(p.capStyle);
-				Pen.addArc(view.cen, view.innerRadius+inset, view.prStartAngle, view.prSweepLength);
-				Pen.addArc(view.cen, view.outerRadius-inset, view.prStartAngle, view.prSweepLength);
-			},
-			{"strokeType property doesn't match \around, \inside, \outside, or \insideOutside".warn}
-		);
-		Pen.stroke;
-		Pen.pop;
-	}
-	*/
 }
 
 RotaryLevelLayer : RotaryArcWedgeLayer {
@@ -265,80 +207,6 @@ RotaryLevelLayer : RotaryArcWedgeLayer {
 			}
 		}
 	}
-/*
-	fill {
-		var arcStrokeWidth, arcStrokeRadius;
-		var stAngle, col;
-
-		Pen.push;
-		col = p.fillColor;
-		if (view.bipolar) {
-			stAngle = view.prCenterAngle;
-		} {
-			stAngle = view.prStartAngle;
-		};
-		switch (p.style,
-				\wedge, {
-				Pen.addAnnularWedge(
-					view.cen, view.outerRadius - (view.wedgeWidth*p.width),
-					view.outerRadius*p.radius,
-					view.prStartAngle, view.levelSweepLength
-				);
-				Pen.fill;
-			},
-			\arc, {
-				arcStrokeWidth = view.wedgeWidth*p.width;
-				arcStrokeRadius = (view.wedgeWidth*p.radius) + view.innerRadius - (arcStrokeWidth*0.5);
-				Pen.capStyle_(this.getCapIndex(p.capStyle));
-				Pen.width_(arcStrokeWidth);
-				Pen.addArc(view.cen, arcStrokeRadius, view.prStartAngle, view.levelSweepLength)
-				Pen.stroke;
-			},
-			{"style property doesn't match either \wedge or \arc".warn}
-		);
-		Pen.pop;
-	}
-
-	stroke {
-		var stAngle, col, inset, strokeWidth;
-
-		Pen.push;
-		col = p.strokeColor;
-		if (view.bipolar) {
-			stAngle = view.prCenterAngle;
-			if (view.input<view.centerNorm) {
-				col = Color.hsv(*col.asHSV * [1,1,view.colorValBelow, 1]);
-			}
-		} {
-			stAngle = view.prStartAngle;
-		};
-		strokeWidth = if (p.strokeWidth<1){p.strokeWidth*view.maxRadius}{p.strokeWidth};
-		Pen.width_(strokeWidth);
-		inset = strokeWidth*0.5;
-		Pen.strokeColor_(col);
-		switch (p.strokeType,
-			\around, {
-				Pen.joinStyle = this.getJoinIndex(p.joinStyle);
-				Pen.addAnnularWedge(view.cen, view.innerRadius, view.radius-inset, stAngle, view.levelSweepLength);
-			},
-			\inside, {
-				Pen.capStyle = this.getCapIndex(p.capStyle);
-				Pen.addArc(view.cen, view.innerRadius+inset, stAngle, view.levelSweepLength);
-			},
-			\outside, {
-				Pen.capStyle = this.getCapIndex(p.capStyle);
-				Pen.addArc(view.cen, view.radius-inset, stAngle, view.levelSweepLength);
-			},
-			\insideOutside, {
-				Pen.capStyle = this.getCapIndex(p.capStyle);
-				Pen.addArc(view.cen, view.innerRadius+inset, stAngle, view.levelSweepLength);
-				Pen.addArc(view.cen, view.radius-inset, stAngle, view.levelSweepLength);
-			},
-		);
-		Pen.stroke;
-		Pen.pop;
-	}
-*/
 }
 
 RotaryTextLayer : ValueViewLayer {
@@ -395,7 +263,6 @@ RotaryTickLayer : ValueViewLayer {
 			align: 				\outside,				// specifies the direction the tick is drawn from anchor; \inside, \outside, or \center
 			majorLength:	0.25,						// length of major ticks, realtive to maxRadius (1)
 			minorLength:	0.6,						// length of minor ticks, realtive to majorLength
-
 			majorWidth: 	1,							// width of major tick, in pixels, TODO: this could be relative to windowSize if < 1
 			minorWidth: 	0.5,						// width of minor tick, realtive to majorWidth
 			majorColor: 	Color.black,
@@ -431,6 +298,10 @@ RotaryTickLayer : ValueViewLayer {
 		);
 		penEnd = penSt + tickLength;
 
+		if (strokeWidth<1) {
+			strokeWidth = strokeWidth*view.maxRadius
+		};
+
 		Pen.push;
 		Pen.capStyle = this.getCapIndex(p.capStyle);
 		Pen.strokeColor_(color);
@@ -458,7 +329,7 @@ RotaryHandleLayer : ValueViewLayer {
 			stroke:			true,					// if style = \circle or \arrow
 			strokeColor: Color.black,
 			strokeWidth: 2,						// if style = \line or \circle
-			radius:			3,						// if style = \circle
+			radius:			3,						// if style = \circle; if < 1, normalized to min(w, h) & changes with view size, else treated as a pixel value
 			length: 		0.3,					// if style = \line or \arrow
 			width:			0.6,					// if style = \arrow, relative to length (width of 1 = length)
 			anchor:			0.9,					// where the outer end of the handle is anchored, 0>1, relative to wedgeWidth
@@ -486,10 +357,11 @@ RotaryHandleLayer : ValueViewLayer {
 	}
 
 	drawLine {
-		var penSt;
+		var penSt, strokeWidth;
 		penSt = view.innerRadius+(view.wedgeWidth*p.anchor);
+		strokeWidth = if (p.strokeWidth<1){p.strokeWidth*view.maxRadius}{p.strokeWidth};
 		Pen.capStyle = this.getCapIndex(p.capStyle);
-		Pen.width = p.strokeWidth;
+		Pen.width = strokeWidth;
 		Pen.strokeColor = p.strokeColor;
 		Pen.moveTo(penSt@0);
 		Pen.lineTo((penSt-(view.wedgeWidth*p.length))@0);
@@ -498,8 +370,9 @@ RotaryHandleLayer : ValueViewLayer {
 	}
 
 	drawCircle {
-		var d, rect;
-		d = p.radius*2;
+		var rad, d, rect;
+		rad = if (p.radius<1){p.radius*view.maxRadius}{p.radius};
+		d = rad*2;
 		rect = Size(d, d).asRect;
 		rect = rect.center_((view.innerRadius+(view.wedgeWidth*p.anchor))@0);
 		Pen.rotate(view.prStartAngle+(view.prSweepLength*view.input));
@@ -526,7 +399,7 @@ RotaryHandleLayer : ValueViewLayer {
 			Pen.push;
 			this.genArrowPath(rect);
 			Pen.strokeColor = p.strokeColor;
-			Pen.width = p.strokeWidth;
+			Pen.width = if (p.strokeWidth<1){p.strokeWidth*view.maxRadius}{p.strokeWidth};
 			Pen.joinStyle = this.getJoinIndex(p.joinStyle);
 			Pen.stroke;
 			Pen.pop;
@@ -559,13 +432,14 @@ RotaryOutlineLayer : RotaryArcWedgeLayer {
 	}
 
 	stroke {
-		var d, rect;
+		var d, rect, strokeWidth;
 		d = p.radius*view.outerRadius*2;
+		strokeWidth = if (p.strokeWidth<1){p.strokeWidth*view.maxRadius}{p.strokeWidth};
 		rect = Size(d, d).asRect;
 		rect = rect.center_(view.cen);
 		if (p.fill) {Pen.fillColor = p.fillColor; Pen.fillOval(rect)};
 		if (p.stroke) {
-			Pen.width_(p.strokeWidth);
+			Pen.width_(strokeWidth);
 			Pen.strokeColor = p.strokeColor;
 			Pen.strokeOval(rect)
 		};
