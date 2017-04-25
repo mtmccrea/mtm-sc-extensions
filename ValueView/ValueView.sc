@@ -3,13 +3,12 @@
 // and draws custom layers in a UserView, with mouse/arrow interaction
 
 // TODO
-// if properties can respond to functions which call r.value, does each layer property need to have a value and input set?
 // reconsider: input_ remap input back to it's stepped with the value
-// ^^ this has muddled what the input resolution can be, made step=0 a problem, and somehow circular dragging broke (see radial dial example)
+// ^^ this has muddled what the input resolution can be, made step=0 a problem,
+// and somehow circular dragging broke (see radial dial example)
 // when stroking the outside of the range, fix the line termination
 
 // Knob behavior to port:
-// - make it possible to basically make the same sc knob (visually)
 // - k.enabled = false; // disables interaction, dims the knob
 // add shift_scale, ctl_scale, alt_scale
 // add modelUpdateOnly flag, which if true interacting with the view doesn't
@@ -18,42 +17,25 @@
 // have an inputStep and valueStep, which are exclusive of one another
 //     so if the spec is non-linear, the step can apply to the input rather than the output
 
-// should the value/input be constrained by step on either/or the setter and output?
-
 // double check the arrow key IDs - compare to Knob
 
 // add a visual cue when widget is focussed
 
-/*
-step behavior:
+// NOTE: as the value of spec.step increases, scrolling become less practical,
+// and in fact if the scrollStep is any significant value below the step (as a normalized value)
+// it won't work (spec.step will always constrain the scrolling amount back to it's current position)
 
-separate keystep, scrollstep
-should be able to set input to any value? i.e. default behavior steps unrestricted (non-rounded)
-set it in value
-optionally set inStep, a normalized value (?)
-
-****there should only be keyStep, and scrollStep, normalized 0>1****
-
-NOTE: as the value of spec.step increases, scrolling become less practical,
-and in fact if the scrollStep is any significant value below the step (as a normalized value)
-it won't work (spec.step will always constrain the scrolling amount back to it's current position)
-*/
-
-// TODO: on the arrow, consider *path, *curveTo, or *quadCurveTo
-// see https://www.toptal.com/c-plus-plus/rounded-corners-bezier-curves-qpainter
 
 // TODO: annular wedge and arc stroke shows buggy artifact at
 // start point when position isn't at a 90 degree position
 // and annular wedge start/endpoints don't join for some reason (see Pen.joinStyle = 0,1,2)
 // although the example for Pen.joinStyle looks OK
 
-
-// consider adding easy way to make bezier curves instead of squared off stuff:
-//   https://www.toptal.com/c-plus-plus/rounded-corners-bezier-curves-qpainter
+// consider adding easy way to make bezier curves instead of squared off stuff
+// e.g. on the arrow, consider *path, *curveTo, or *quadCurveTo
+// https://www.toptal.com/c-plus-plus/rounded-corners-bezier-curves-qpainter
 
 // TODO: should maxRefreshRate be optional?
-
-// TODO: only update if value is different... check the edge cases though to make sure its a good idea
 
 
 ValueView : View {
@@ -98,18 +80,22 @@ ValueView : View {
 
 		userView = UserView(this, this.bounds.origin_(0@0)).resize_(5);
 		userView.drawFunc_(this.drawFunc);
+
 		// over/write mouse actions
 		// TODO: make a complete list
+
 		userView.mouseMoveAction_({
 			|v,x,y,modifiers|
 			mouseMovePnt = x@y;
 			mouseMoveAction.(v,x,y,modifiers)
 		});
+
 		userView.mouseDownAction_({
 			|v,x,y, modifiers, buttonNumber, clickCount|
 			mouseDownPnt = x@y;
 			mouseDownAction.(v,x,y, modifiers, buttonNumber, clickCount)
 		});
+
 		userView.mouseUpAction_({
 			|v,x,y, modifiers|
 			mouseUpPnt = x@y;
@@ -138,8 +124,6 @@ ValueView : View {
 		var dx, dy, delta;
 		dx = xDelta * xScrollDir;
 		dy = yDelta * yScrollDir;
-		// delta = max(step, 1e-10)  * (dx+dy).sign * scrollStepMul; // don't let step = 0
-		// this.valueAction = value + delta;
 		delta = scrollStep * (dx+dy).sign;
 		this.inputAction = input + delta;
 	}
@@ -151,7 +135,7 @@ ValueView : View {
 			16777236, { 1 * keyDirLR},  // right
 			16777237, {-1 * keyDirUD},	// down
 			16777235, { 1 * keyDirUD},	// up
-			{^this}						// break
+			{^this}											// break
 		);
 
 		// delta = max(step, 1e-10) * dir * arrowKeyStepMul;
@@ -226,11 +210,13 @@ ValueView : View {
 	broadcastState { |newValue=true|
 		// update the value and input in layers' properties list
 		layers.do({|l| l.p.val = value; l.p.input = input});
+
 		// TODO: add a notify flag instead of automatically notifying?
 		// TODO: consider making this a global flag, e.g. broadcastNewOnly
 		// the risk of only broadcasting new values is that a new listener may not be updated
 		// if value doesn't change for a while... but is this the listener's responsibility to
 		// get an initial state?
+
 		// notify dependants
 		this.changed(\value, value);
 		this.changed(\input, input);
@@ -255,8 +241,8 @@ ValueView : View {
 			^this
 		};
 		spec = controlSpec;
-		this.rangeInPixels_(rangeInPx); // restore mouse scaling so it feels the same
-		updateValue.if{this.value_(value)}; // also updates input
+		this.rangeInPixels_(rangeInPx);			// restore mouse scaling so it feels the same
+		updateValue.if{this.value_(value)};	// also updates input
 	}
 
 	// refresh { userView.refresh }
@@ -267,7 +253,7 @@ ValueView : View {
 				allowUpdate = false;
 				AppClock.sched(updateWait, {
 
-					if (updateHeld) {  // perform deferred refresh
+					if (updateHeld) {			// perform deferred refresh
 						userView.refresh;
 						updateHeld = false;
 					};
@@ -289,9 +275,4 @@ ValueView : View {
 		maxRefreshRate = hz;
 		updateWait = maxRefreshRate.reciprocal;
 	}
-
-	// step_ {|stepVal|
-	// 	step = stepVal;
-	// 	spec.step_(step);
-	// }
 }
