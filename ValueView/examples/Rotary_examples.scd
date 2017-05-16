@@ -178,8 +178,8 @@ r.handle.strokeWidth = 0.12;
 r.handle.style = \arrow;
 r.handle.anchor = 0.75;
 r.handle.length = 0.45;
-r.handle.joinStyle_(\round)
-r.handle.joinStyle_(\flat)
+r.handle.joinStyle_(\round);
+// r.handle.joinStyle_(\flat)
 r.handle.stroke = true;
 r.handle.fillColor = Color.hsv(0.27,0.8,0.8);
 r.handle.strokeColor = Color.hsv(0.27,0.9,0.8);
@@ -224,19 +224,16 @@ r.range.fill = true;
 r.range.fillColor = Color.new(0.9,0.9,0.9).alpha_(0.8);
 r.range.stroke = false;
 
-r.handle.show_(true).strokeColor_(Color.green);
-r.handle.strokeWidth = 0.12;
+r.handle.show_(true);
+r.handle.stroke = false;
+// r.handle.show_(true).strokeColor_(Color.green);
+// r.handle.strokeWidth = 0.12;
 
 r.handle.style = \arrow;
-r.handle.anchor = 0.6;
-r.handle.length = 0.45;
+r.handle.anchor_(0.65).length_(0.6);
+
 // r.handle.joinStyle_(\round)
 r.handle.joinStyle_(\flat);
-r.handle.stroke = true;
-r.handle.fillColor = Color.hsv(0.27,0.8,0.8);
-r.handle.strokeColor = Color.hsv(0.27,0.9,0.8);
-r.handle.strokeWidth = 0.05;
-
 r.handle.fillColor = Color.hsv(0.27,1,0.8);
 
 r.level.show = false;
@@ -276,26 +273,25 @@ r.range.show = true;
 // r.range.fill = false;
 r.range.fill = true;
 r.range.fillColor = Color.new(0.9,0.9,0.9).alpha_(0.8);
-r.range.stroke = true;
-r.range.strokeWidth_(0.015)
+r.range.stroke = false;
+r.range.strokeWidth_(0.015);
 r.range.strokeType = \inside;
-r.range.width = 1
-r.innerRadiusRatio_(0.0)
+r.range.width = 1;
+r.innerRadiusRatio_(0.0);
 
-r.handle.show_(true).strokeColor_(Color.green);
-r.handle.strokeWidth = 0.12;
-
+r.handle.show_(true);
 r.handle.style = \arrow;
-r.handle.anchor = 0.5;
-r.handle.length = 0.45;
-// r.handle.joinStyle_(\round)
-r.handle.joinStyle_(\flat);
-r.handle.stroke = true;
-r.handle.fillColor = Color.hsv(0.27,0.8,0.8);
-r.handle.strokeColor = Color.hsv(0.27,0.9,0.8);
-r.handle.strokeWidth = 0.05;
+r.handle.anchor_(0.65).length_(0.6);
 
-r.handle.fillColor = Color.hsv(0.27,1,0.8);
+r.handle.stroke = false;
+// r.handle.stroke = true;
+// r.handle.strokeColor_(Color.green);
+// r.handle.strokeWidth = 0.12;
+// r.handle.joinStyle_(\flat);
+// r.handle.strokeColor = Color.hsv(0.27,0.9,0.8);
+// r.handle.strokeWidth = 0.05;
+
+r.handle.fillColor = Color.hsv(0.27,0.8,0.8);
 
 r.level.show = false;
 r.text.show = false;
@@ -318,19 +314,12 @@ r.text.round = 0.1; // round the value of the displayed text
 r.scrollStep_(0.01); // percentage of the full range for each scroll step
 r.keyStep_(45.reciprocal); // percentage of the full range for each key step, 20 strokes per range in this case
 
-r.outline.show = false;
+r.outline.show = true; //false;
 r.outline.strokeWidth = 0.015;
-r.outline.radius = 0.6
+r.outline.radius = 0.7;
+r.outline.rangeOnly = true;
 )
 
-
-(
-r.handle.style = \lineAndCircle;
-r.handle.strokeWidth = 15;
-r.handle.strokeColor_(Color.hsv(0.5,1,0.8));
-r.handle.radius_(r.handle.strokeWidth *0.3);
-r.handle.fillColor = Color.red;
-)
 
 /* like SC's default knob */
 (
@@ -338,39 +327,15 @@ r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0).front;
 r.startAngle_(-0.8pi).sweepLength_(1.6pi);
 r.outline.show_(true).radius_(0.75);
 r.outline.fill_(true).fillColor_(Color.white.alpha_(0.3));
-r.outline.stroke_(true).strokeColor_(Color.gray).strokeWidth_(5);
-r.handle.style_(\line).capStyle_(\round).strokeWidth_(12).anchor_(0.6);
+r.outline.stroke_(true).strokeColor_(Color.gray).strokeWidth_(0.04);
+r.handle.style_(\line).capStyle_(\round).strokeWidth_(0.08).anchor_(0.6);
 // TODO: make handle size a normalized ratio so it changes with resize
 r.text.show = false;
 r.level.style_(\arc).width_(0.1).capStyle_(\round).fillColor_(Color.green);
 r.range.style_(\arc).width_(0.1).capStyle_(\round);
 )
 
-(
-// continuous/wrapping knob
-r = RotaryView(bounds: Size(300, 300).asRect, innerRadiusRatio: 0.4).front;
-r.spec = [0, 360, \lin].asSpec;
-r.startAngle_(0.0pi);
-r.sweepLength = 2pi;
-r.rangeFillColor = Color.new(0.9,0.9,0.9);
-r.strokeRange = false;
-r.showHandle_(true).handleColor_(Color.green);
-r.fillLevel = false;
-r.strokeLevel = false;
-r.valueFontSize = 36;
-r.valueAlign = \center;
-r.showTicks = true;
-r.numTicks_(12, 3, endTick: false);
-// r.numTicks_(9, 2);
-r.tickColor = Color.gray;
-r.tickAlign = \outside;
-r.majorTickRatio = 1;
-r.action = {|val| val.postln};
-r.direction = \cw;
-r.wrap = true;
-// r.wrap = false;
-r.round = 1;
-)
+
 
 // peak/rms meter
 
