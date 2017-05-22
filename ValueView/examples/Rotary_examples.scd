@@ -402,25 +402,34 @@ r.ticksAtValues_([0, -6, -12, -24], [-3, -9, -16]);
 (
 var setupRot, numRots = 8;
 setupRot = {|col|
-	var r;
-	r= Rotary(spec: [0,45].asSpec, innerRadiusRatio: 0.1);
+	// var r;
+	r= RotaryView(bounds: Size(300, 300).asRect, spec: [0,45].asSpec, innerRadiusRatio: 0.1).front;
+	r.clickMode_(\absolute);
 	r.spec = [10, 100, \lin].asSpec;
 	r.startAngle_(0.75pi).sweepLength_(1.5pi);
-	r.rangeFillColor = Color.new(0.9,0.9,0.9);
-	r.strokeRange = false;
-	r.levelStrokeColor = col;
-	r.handleColor = col;
-	r.levelFillColor = col.copy.alpha_(0.2);
-	r.strokeLevel = true;
-	r.levelStroke = \outside;
-	// r.valueFontColor = col.val_(0.2);
-	r.levelStrokeWidth = 3;
-	r.valueFontSize = 12;
-	r.valueAlign = \right;
-	r.showTicks = true;
+	r.range.fillColor = Color.new(0.9,0.9,0.9);
+	r.range.stroke = false;
+	r.level.strokeColor = col;
+	r.handle.strokeColor = col;
+	r.level.fillColor = col.copy.alpha_(0.2);
+	r.level.stroke = true;
+	r.level.strokeType = \outside;
+	r.level.strokeWidth = 0.05;
+	r.handle.p.keys.do(_.postln);
+	r.handle.length = 0.95;
+	r.handle.anchor = 0.97;
+	r.handle.strokeWidth = 0.05;
+	r.text.fontSize = 12;
+	r.text.align = \right;
+	r.ticks.show = true;
 	r.numTicks_(15, 5);
-	r.tickColor = Color.gray;
-	r.action = {|val| val.postln};
+	r.ticks.majorColor = Color.gray;
+	r.ticks.minorColor = Color.gray;
+	r.ticks.majorWidth = 0.05;
+	r.ticks.minorWidth = 0.5;
+	r.ticks.anchor = 0.9;
+	r.ticks.capStyle = \flat;
+	r.action = {|v, val| [v, val].postln};
 	r;
 };
 
@@ -429,8 +438,48 @@ w = Window(bounds:Rect(100,100, 140*8, 150)).front.layout_(HLayout(*numRots.coll
 	// Color.red
 )})))
 )
+
+
+( // bipolar rotary for xform display "gain"
+var setupRot, numRots = 8;
+var col = Color.red;
+// var r;
+r= RotaryView(bounds: Size(300, 300).asRect, spec: [0,45].asSpec, innerRadiusRatio: 0.3).front;
+r.clickMode_(\absolute);
+r.spec = [-120, 12, \db].asSpec;
+r.centerValue_(0);
+r.startAngle_(pi).sweepLength_(1.25pi);
+r.range.fillColor = Color.new(0.9,0.9,0.9);
+r.range.stroke = false;
+r.handle.strokeColor = {|p| if (p.val>=0) {Color.red}{Color.blue}};
+r.level.strokeColor = {|p| if (p.val>=0) {Color.red}{Color.blue}};
+r.level.fillColor = {|p| if (p.val>=0) {Color.red.alpha_(0.2)}{Color.blue.alpha_(0.2)}};
+// r.handle.strokeColor = col;
+// r.level.strokeColor = col;
+// r.level.fillColor = col.copy.alpha_(0.2);
+r.level.stroke = true;
+r.level.strokeType = \outside;
+r.level.strokeWidth = 0.05;
+r.handle.show = false;
+// r.handle.length = 0.95;
+// r.handle.anchor = 0.97;
+// r.handle.strokeWidth = 0.05;
+r.text.fontSize = 12;
+r.text.align = \right;
+r.ticks.show = true;
+r.ticksAtValues_([0]);
+// r.numTicks_(15, 5);
+r.ticks.majorColor = Color.gray;
+// r.ticks.minorColor = Color.gray;
+r.ticks.majorWidth = 0.05;
+// r.ticks.minorWidth = 0.25;
+r.ticks.anchor = 0.95;
+// r.ticks.capStyle = \flat;
+// r.action = {|v, val| [v, val].postln};
+r.action = nil;
+r.bipolar = true
 )
-)
+
 
 /* circle handle */
 (
