@@ -448,36 +448,56 @@ r= RotaryView(bounds: Size(300, 300).asRect, spec: [0,45].asSpec, innerRadiusRat
 r.clickMode_(\absolute);
 r.spec = [-120, 12, \db].asSpec;
 r.centerValue_(0);
-r.startAngle_(pi).sweepLength_(1.25pi);
+r.startAngle_(pi).sweepLength_(1pi);
 r.range.fillColor = Color.new(0.9,0.9,0.9);
 r.range.stroke = false;
-r.handle.strokeColor = {|p| if (p.val>=0) {Color.red}{Color.blue}};
 r.level.strokeColor = {|p| if (p.val>=0) {Color.red}{Color.blue}};
 r.level.fillColor = {|p| if (p.val>=0) {Color.red.alpha_(0.2)}{Color.blue.alpha_(0.2)}};
-// r.handle.strokeColor = col;
-// r.level.strokeColor = col;
-// r.level.fillColor = col.copy.alpha_(0.2);
 r.level.stroke = true;
 r.level.strokeType = \outside;
 r.level.strokeWidth = 0.05;
 r.handle.show = false;
-// r.handle.length = 0.95;
-// r.handle.anchor = 0.97;
-// r.handle.strokeWidth = 0.05;
 r.text.fontSize = 12;
 r.text.align = \right;
 r.ticks.show = true;
-r.ticksAtValues_([0]);
-// r.numTicks_(15, 5);
+r.ticksAtValues_([0], [3, 6, 9, 12].collect({|me| [me.neg, me]}).flat.sort);
 r.ticks.majorColor = Color.gray;
-// r.ticks.minorColor = Color.gray;
 r.ticks.majorWidth = 0.05;
-// r.ticks.minorWidth = 0.25;
+r.ticks.minorWidth = 0.25;
 r.ticks.anchor = 0.95;
-// r.ticks.capStyle = \flat;
-// r.action = {|v, val| [v, val].postln};
+r.ticks.capStyle = \round;
 r.action = nil;
-r.bipolar = true
+r.bipolar = true;
+)
+
+( // bipolar rotary for xform display "degree"
+var setupRot, numRots = 8;
+var col = Color.red;
+// var r;
+r= RotaryView(bounds: Size(300, 300).asRect, spec: [0,45].asSpec, innerRadiusRatio: 0.3).front;
+r.clickMode_(\absolute);
+r.spec = [-pi/2, pi/2, \lin].asSpec;
+r.centerValue_(0);
+r.startAngle_(-pi/2).sweepLength_(pi);
+r.range.fillColor = Color.new(0.9,0.9,0.9);
+r.range.stroke = false;
+r.level.strokeColor = {|p| if (p.val>=0) {Color.hsv(0.13,1,0.9)}{Color.green.alpha_(0.8)}};
+r.level.fillColor = {|p| if (p.val>=0) {Color.hsv(0.13, 0.8, 0.92, 0.5)}{Color.green.alpha_(0.3)}};
+r.level.stroke = true;
+r.level.strokeType = \outside;
+r.level.strokeWidth = 0.05;
+r.handle.show = false;
+r.text.fontSize = 12;
+r.text.align = \center;
+r.ticks.show = true;
+r.ticksAtValues_([0, -pi/4, pi/4, -pi/2, pi/2], [pi/6, pi/3].collect({|me| [me.neg, me]}).flat.sort);
+r.ticks.majorColor = Color.gray;
+r.ticks.majorWidth = 0.05;
+r.ticks.minorWidth = 0.25;
+r.ticks.anchor = 0.9;
+r.ticks.capStyle = \round;
+r.action = nil;
+r.bipolar = true;
 )
 
 
