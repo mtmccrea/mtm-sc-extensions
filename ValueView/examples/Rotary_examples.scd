@@ -442,9 +442,7 @@ w = Window(bounds:Rect(100,100, 140*8, 150)).front.layout_(HLayout(*numRots.coll
 
 ( // bipolar rotary for xform display "gain"
 var setupRot, numRots = 8;
-var col = Color.red;
-// var r;
-r= RotaryView(bounds: Size(300, 300).asRect, spec: [0,45].asSpec, innerRadiusRatio: 0.3).front;
+r = RotaryView(bounds: Size(300, 300).asRect, spec: [0,45].asSpec, innerRadiusRatio: 0.3).front;
 r.clickMode_(\absolute);
 r.spec = [-120, 12, \db].asSpec;
 r.centerValue_(0);
@@ -456,15 +454,16 @@ r.level.fillColor = {|p| if (p.val>=0) {Color.red.alpha_(0.2)}{Color.blue.alpha_
 r.level.stroke = true;
 r.level.strokeType = \outside;
 r.level.strokeWidth = 0.05;
-r.handle.show = false;
+r.handle.show = true;
+r.handle.strokeColor_(Color.gray.alpha_(0.4));
+r.handle.anchor_(1).length_(1);
 r.text.fontSize = 12;
 r.text.align = \right;
 r.ticks.show = true;
 r.ticksAtValues_([0], [3, 6, 9, 12].collect({|me| [me.neg, me]}).flat.sort);
 r.ticks.majorColor = Color.gray;
-r.ticks.majorWidth = 0.05;
-r.ticks.minorWidth = 0.25;
-r.ticks.anchor = 0.95;
+r.ticks.majorWidth_(0.05).minorWidth_(0.25);
+r.ticks.anchor = 0.87;
 r.ticks.capStyle = \round;
 r.action = nil;
 r.bipolar = true;
@@ -472,8 +471,6 @@ r.bipolar = true;
 
 ( // bipolar rotary for xform display "degree"
 var setupRot, numRots = 8;
-var col = Color.red;
-// var r;
 r= RotaryView(bounds: Size(300, 300).asRect, spec: [0,45].asSpec, innerRadiusRatio: 0.3).front;
 r.clickMode_(\absolute);
 r.spec = [-pi/2, pi/2, \lin].asSpec;
@@ -486,7 +483,9 @@ r.level.fillColor = {|p| if (p.val>=0) {Color.hsv(0.13, 0.8, 0.92, 0.5)}{Color.g
 r.level.stroke = true;
 r.level.strokeType = \outside;
 r.level.strokeWidth = 0.05;
-r.handle.show = false;
+r.handle.show = true;
+r.handle.strokeColor_(Color.gray.alpha_(0.4));
+r.handle.anchor_(1).length_(1);
 r.text.fontSize = 12;
 r.text.align = \center;
 r.ticks.show = true;
@@ -496,9 +495,13 @@ r.ticks.majorWidth = 0.05;
 r.ticks.minorWidth = 0.25;
 r.ticks.anchor = 0.9;
 r.ticks.capStyle = \round;
-r.action = nil;
 r.bipolar = true;
 )
+
+
+
+
+
 
 
 /* circle handle */
