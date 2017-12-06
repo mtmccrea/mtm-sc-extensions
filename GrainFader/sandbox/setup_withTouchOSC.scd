@@ -1,7 +1,9 @@
 // running this will boot the server it it's not already booted
 
 // an array for outbusses will send each synth to individual busses
-g = GrainFader([0,1], [2,3], bufFolderPath: "/Users/admin/Documents/Recordings/performance/");
+g = GrainFader(0, 2, bufFolderPath: "/Users/admin/src/LOCAL_UW/ultrasound/Sound_Files/mono_textures/");
+// g = GrainFader([0,1], [2,3], bufFolderPath: "/Users/admin/src/LOCAL_UW/ultrasound/Sound_Files/mono_textures/");
+// g = GrainFader([0,1], [2,3], bufFolderPath: "/Users/admin/Documents/Recordings/performance/");
 // g = GrainFader(0, 1, bufFolderPath: "/Users/admin/Documents/Recordings/performance/");
 
 
@@ -9,7 +11,9 @@ g = GrainFader([0,1], [2,3], bufFolderPath: "/Users/admin/Documents/Recordings/p
 Pipe.new("ipconfig getifaddr en1", "r").getLine();
 
 // once connected on a local network, enter the iPad's IP
-t = TouchOSC("169.254.75.190", 9000)
+t = TouchOSC("169.254.3.103", 9000) // listen only to this device
+t = TouchOSC("localhost", 9000) // listen only to this device
+t = TouchOSC("169.254.3.103", 9000, lockOnDeviceIP: false) // accept osc messages from other addresses as well
 
 // connect the TouchOSC to the GrainFader
 // note the layout now has a 4x4 menu of soundfiles
