@@ -177,23 +177,23 @@ GrainFader {
 
 			IdentityDictionary( know: true ).putPairs([
 				\params, IdentityDictionary( know: true ).putPairs([
-					\gate,			synth.collect{ |synth| synth.gate },
-					\amp,			synth.collect{ |synth| synth.amp },
+                    \gate,      synth.collect{ |synth| synth.gate },
+					\amp,       synth.collect{ |synth| synth.amp },
 					\grainRate,	synth.collect{ |synth| synth.grainRate },
 					\grainDur,	synth.collect{ |synth| synth.grainDur },
 					\grainRand,	synth.collect{ |synth| synth.grainRand },
-					\posDisp,		synth.collect{ |synth| synth.posDisp },
-					\pitch,			synth.collect{ |synth| synth.pitch },
-					\posRate,		synth.collect{ |synth| synth.posRate },
-					\posInv,		synth.collect{ |synth| synth.posInv },
-					\start,			synth.collect{ |synth| synth.start },
-					\end,			synth.collect{ |synth| synth.end },
-					\auxmix,		synth.collect{ |synth| synth.auxmix },
+					\posDisp,   synth.collect{ |synth| synth.posDisp },
+					\pitch,     synth.collect{ |synth| synth.pitch },
+					\posRate,   synth.collect{ |synth| synth.posRate },
+					\posInv,    synth.collect{ |synth| synth.posInv },
+					\start,     synth.collect{ |synth| synth.start },
+					\end,       synth.collect{ |synth| synth.end },
+					\auxmix,    synth.collect{ |synth| synth.auxmix },
 				]),
 				// recalling these vars depend on whether 1 or both synths are recalled
-				\balanceAmp,	synth.collect{|synth| synth.balanceAmp },
-				\fileName,		synth.collect{|synth| PathName(synth.buffer.path).fileName },
-				\numStored,		synth.size,
+				\balanceAmp,   synth.collect{|synth| synth.balanceAmp },
+				\fileName,     synth.collect{|synth| PathName(synth.buffer.path).fileName },
+				\numStored,    synth.size,
 			]);
 		);
 
@@ -635,7 +635,7 @@ GrainFader {
 			aTouchOsc.connect( synth,
 				//CTK bug - need to use function so getter works
 				// \recvUpdate++j,{|obj, val| obj.recvUpdate_(val) },
-				\recvUpdate++j,{|obj, val| this.prToggleUpdateSynth(i, val) },
+				\recvUpdate++j, {|obj, val| this.prToggleUpdateSynth(i, val) },
 				\gate++j,		{|obj, val| obj.gate_(val) },		//\gate,
 				\amp++j,		{|obj, val| obj.amp_(val.dbamp) },
 				\grainRate++j,	{|obj, val| obj.grainRate_(val) },	//\grainRate
