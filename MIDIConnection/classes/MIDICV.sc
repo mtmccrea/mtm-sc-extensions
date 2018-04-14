@@ -179,6 +179,7 @@ MIDICV : NumericCV {
 	var <ccNum, <midiChan; //
 	var <midiOut, <>toggleOnMode=1, <destPortIdx; //<toggleState,
 	var <toggleCV, toggleFunc, mirrorHWFunc;
+	var ccNumOffset = 1000, ccKey;
 
 	cc {
 		| ccnum, chan, srcID, argTemplate, dispatcher, divisor = 127.0 |
@@ -188,8 +189,9 @@ MIDICV : NumericCV {
 		MIDICV.midiCvDict ?? {MIDICV.midiCvDict = Dictionary()};
 
 		ccNum = ccnum;
+		ccKey = ccNum + ccNumOffset;
 
-		overWrite = MIDICV.midiCvDict[ccNum];
+		overWrite = MIDICV.midiCvDict[ccKey];
 		overWrite !? {
 			// the former MIDICV will be overwritten in the global dict
 			format("Overwriting MIDIdef: %", ccNum).warn;
@@ -210,7 +212,7 @@ MIDICV : NumericCV {
 		chan !? {midiChan = chan};
 		midiDef = MIDIdef.cc(ccNum.asSymbol, func, ccNum, chan, srcID, argTemplate, dispatcher);
 
-		MIDICV.midiCvDict.put(ccNum, this);
+		MIDICV.midiCvDict.put(ccKey, this);
 
 		responders = responders ? [];
 	}
@@ -223,8 +225,9 @@ MIDICV : NumericCV {
 		MIDICV.midiCvDict ?? {MIDICV.midiCvDict = Dictionary()};
 
 		ccNum = ccnum;
+		ccKey = ccNum + 0;
 
-		overWrite = MIDICV.midiCvDict[ccNum];
+		overWrite = MIDICV.midiCvDict[ccKey];
 		overWrite !? {
 			// the former MIDICV will be overwritten in the global dict
 			format("Overwriting MIDIdef: %", ccNum).warn;
@@ -250,7 +253,7 @@ MIDICV : NumericCV {
 				func, ccNum, chan, srcID, argTemplate, dispatcher )
 		];
 
-		MIDICV.midiCvDict.put(ccNum, this);
+		MIDICV.midiCvDict.put(ccKey, this);
 
 		responders = responders ? [];
 	}
@@ -264,12 +267,19 @@ MIDICV : NumericCV {
 		} {
 			var chan, srcID, argTemplate, dispatcher, func, key;
 
-			if( (midiDef.msgType == \control ).not)
-			{"Updating cc number on the fly is currently only supported with \control values, not noteOn/Off (button-style) values.\nIf creating a toggle CV, free and re-create a MIDICV to change cc number".throw};
+			if( (midiDef.msgType == \control ).not){
+				format(
+					"Updating cc number on the fly is currently only supported"
+					"with \control values, not noteOn/Off (button-style) values."
+					"\nIf creating a toggle CV, free and re-create a MIDICV to"
+					"change cc number"
+				).throw
+			};
 
 			// remove the MIDIdef currently owned by this instance
-			MIDICV.midiCvDict.removeAt(ccNum);
+			MIDICV.midiCvDict.removeAt(ccKey);
 			ccNum = newCcNum; // update var to new ccNum
+			ccKey = ccNum + ccNumOffset;
 
 			chan = midiChan.postln; //midiDef.chan;
 			srcID = midiDef.srcID.postln;
@@ -283,7 +293,7 @@ MIDICV : NumericCV {
 			"creating new one".postln;
 			midiDef = MIDIdef.cc(ccNum.asSymbol, func, ccNum, chan, srcID, argTemplate, dispatcher);
 			// move this instance to the new ccNum slot in the global dict
-			MIDICV.midiCvDict.put(ccNum, this);
+			MIDICV.midiCvDict.put(ccKey, this);
 		}
 	}
 
@@ -496,7 +506,7 @@ MIDICV : NumericCV {
 		this.disconnectAll;
 		responders.do{ |resp| resp = nil };
 		responders = func = nil;
-		ccNum !? MIDICV.midiCvDict.removeAt(ccNum);
+		ccKey !? MIDICV.midiCvDict.removeAt(ccKey);
 		midiDef !? midiDef.asArray.do(_.free); // asArray to handle noteOn/Off MIDIdef pairs for toggle
 		// midiOut !? { this.stopEchoToggle; };
 	}
