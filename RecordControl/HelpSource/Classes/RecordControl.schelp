@@ -1,0 +1,301 @@
+TITLE:: RecordControl
+summary:: Record data from a control bus to file.
+categories:: Control, Recording
+related:: Classes/Bus
+
+DESCRIPTION::
+Record multichannel control busses to a file. The GUI will let you monitor the bus,
+change the recording bus or number of channels to record, choose recording directory,
+control file overwriting, and more.
+
+Methods are currently undocumented, but you'll find example code link::#examples#below::.
+
+EXAMPLES::
+code::
+a = CtkControl.lfo(SinOsc, low: -2, high:3).play
+b = CtkControl.lfo(LFTri, low: -22, high:13).play
+
+r = RecordControl( a.bus, 2, "ctlTestTwo", "~/Desktop/test".standardizePath, appendKr:false)
+r = RecordControl( a.bus, 2, "ctlTestSix", "~/Desktop/test".standardizePath, overwrite:true)
+r = RecordControl( a.bus, 2, "pqqwe", "~/Desktop/test".standardizePath, overwrite:false)
+r = RecordControl( a.bus, 2, directory: "~/Desktop/test".standardizePath, overwrite:false)
+r.dump
+
+r = RecordControl(3)
+r.makeGui
+"".resolveRelative
+
+r.makeGui
+
+r.plot
+
+r.record
+r.record(incrementFileName:false)
+r.stop
+
+r.openDirectory // find the files
+
+r.numChannels_(2)
+r.overlayPlot_(true)
+r.busnum_(a.bus)
+r.sampleFormat = "float"
+r.headerFormat = "aiff"
+r.appendKr = false
+r.fileName_("newNameCtlTestSeven")
+r.selectDirectory
+
+// make a new directory and record to it
+File.mkdir(r.directory +/+ "subtest")
+r.directory_(r.directory +/+ "subtest")
+
+r.free
+a.free
+b.free
+::
+
+CLASSMETHODS::
+
+METHOD:: new
+(describe method here)
+
+ARGUMENT:: busOrIndex
+(describe argument here)
+
+ARGUMENT:: numChannels
+(describe argument here)
+
+ARGUMENT:: fileName
+(describe argument here)
+
+ARGUMENT:: directory
+(describe argument here)
+
+ARGUMENT:: headerFormat
+(describe argument here)
+
+ARGUMENT:: sampleFormat
+(describe argument here)
+
+ARGUMENT:: overwrite
+(describe argument here)
+
+ARGUMENT:: appendKr
+(describe argument here)
+
+ARGUMENT:: server
+(describe argument here)
+
+ARGUMENT:: makeGui
+(describe argument here)
+
+returns:: (describe returnvalue here)
+
+
+INSTANCEMETHODS::
+
+METHOD:: prPrepareBuffer
+(describe method here)
+
+ARGUMENT:: cond
+(describe argument here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: openDirectory
+(describe method here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: record
+(describe method here)
+
+ARGUMENT:: incrementFileName
+(describe argument here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: plot
+(describe method here)
+
+ARGUMENT:: overlay
+(describe argument here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: recPath
+(describe method here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: headerFormat
+(describe method here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: plotter
+(describe method here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: overwrite
+(describe method here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: verbose
+(describe method here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: free
+(describe method here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: init
+(describe method here)
+
+ARGUMENT:: argBus
+(describe argument here)
+
+ARGUMENT:: argFileName
+(describe argument here)
+
+ARGUMENT:: argDirectory
+(describe argument here)
+
+ARGUMENT:: makeGui
+(describe argument here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: busnum
+(describe method here)
+
+ARGUMENT:: busOrIndex
+(describe argument here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: setPlotterBounds
+(describe method here)
+
+ARGUMENT::  ... args
+(describe argument here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: prCleanupBuffer
+(describe method here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: numChannels
+(describe method here)
+
+ARGUMENT:: n
+(describe argument here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: overlayPlot
+(describe method here)
+
+ARGUMENT:: bool
+(describe argument here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: prResetBuffer
+(describe method here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: gui
+(describe method here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: prCheckValidDir
+(describe method here)
+
+ARGUMENT:: path
+(describe argument here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: appendKr
+(describe method here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: makeGui
+(describe method here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: selectDirectory
+(describe method here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: buffer
+(describe method here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: directory
+(describe method here)
+
+ARGUMENT:: path
+(describe argument here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: recording
+(describe method here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: fileName
+(describe method here)
+
+ARGUMENT:: string
+(describe argument here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: sampleFormat
+(describe method here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: plotting
+(describe method here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: stop
+(describe method here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: prBeginRecording
+(describe method here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: prCheckRecState
+(describe method here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: prUpdatePlotter
+(describe method here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: prBuildSynthDef
+(describe method here)
+
+returns:: (describe returnvalue here)
