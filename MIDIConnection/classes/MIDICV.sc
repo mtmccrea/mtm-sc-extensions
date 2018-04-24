@@ -325,15 +325,27 @@ MIDICV : NumericCV {
 
 	toggleState {^toggleCV.value}
 
-	// destPort: port index of controller in MIDIClient.destinations
+	// destPort: an instance of MIDIOut, MIDIEndPoint (allows to select port by name) or port index of controller in MIDIClient.destinations
 	// initState: start with the toggle on (1) or off (0)
 	// TODO: investigate onMode: blinking (2)
 	mirrorHWToggle {
 		|destPort=0, onMode=1|
 		toggleCV ?? {"Toggle not yet created! Use .createToggle to initialize the toggle mode".throw};
 
-		destPortIdx = destPort;
-		midiOut = MIDIOut(destPort, MIDIClient.destinations[destPort].uid);
+		destPort.class.name.switch(
+			\MIDIEndPoint, {
+				midiOut = MIDIOut.newByName(destPort.device, destPort.name);
+				midiOut.latency_(0);
+			},
+			\MIDIOut, {
+				midiOut = destPort;
+			},
+			{//assumes SimpleNumber - port index
+				destPortIdx = destPort;
+				midiOut = MIDIOut(destPort);
+				midiOut.latency_(0);
+			}
+		);
 		toggleOnMode = if ((onMode>2) or: (onMode<1))
 		{ "onMode must be 1 (solid) or 2 (blinking). Defaulting to 1.".warn; 1 }
 		{ onMode };
