@@ -93,8 +93,11 @@ e = {|val| postf("Toggled! %\n", val)};
 // This toggle state can be mirrored out to a MIDI hardware port.
 // It sends to the same channel as the MIDICV that this toggle corresponds to.
 // Turn on the hardware mirroring
-//   destPort: port index of controller in MIDIClient.destinations
+//   destPort: an instance of MIDIOut, MIDIEndPoint (allows to select port by name) or port index of controller in MIDIClient.destinations
+// using MIDIOut or MIDIEndPoint allows to select MIDI port by name (recommended)
 ~midiBut.mirrorHWToggle(destPort: 0)
+~midiBut.mirrorHWToggle(destPort: MIDIOut.newByName("X-TOUCH COMPACT", "X-TOUCH COMPACT"))
+~midiBut.mirrorHWToggle(destPort: MIDIOut.findPort("X-TOUCH COMPACT", "X-TOUCH COMPACT")); // MIDIOut.findPort returns a MIDIEndPoint
 
 // NOTE: Right now, toggleState update on button push,
 //    and "val" (the MIDICV control value) is still the
