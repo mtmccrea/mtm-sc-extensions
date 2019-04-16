@@ -4,7 +4,7 @@ p.dump
 (
 // i = Image.fromWindow(w, a.bounds);
 i = Image.fromWindow(p.parent, (p.plots[0].bounds.asArray+[0,0,15,15]).asRect);
-w.close;
+// w.close;
 i.plot(freeOnClose:true);
 )
 
