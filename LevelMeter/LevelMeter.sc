@@ -45,7 +45,7 @@ LevelMeter : View {
 	init { |i_label, i_labelAlign, i_rangeLabelAlign, i_levelLabelAlign| //i_orient,
 		var txtSize;
 		// "copyArgs"
-		label = i_label !? {i_label.asString};
+		label = i_label !? { i_label.asString };
 		labelAlign = i_labelAlign;
 		rangeLabelAlign = i_rangeLabelAlign;
 		levelLabelAlign = i_levelLabelAlign;
@@ -121,33 +121,33 @@ LevelMeter : View {
 			levelView = View().layout_(levelLayout);
 
 			align = switch (levelLabelAlign,
-				\bottomLeft, {\left}, \bottom, {\center}, \bottomRight, {\right},
-				\topLeft, {\left}, \top, {\center}, \topRight, {\right},
-				{\center}
+				\bottomLeft, { \left }, \bottom, { \center }, \bottomRight, { \right },
+				\topLeft, { \left }, \top, { \center }, \topRight, { \right },
+				{ \center }
 			);
 
-			[pkTxt, valTxt].do{|txt| levelLayout.add(txt.align_(align), align: align)};
+			[pkTxt, valTxt].do{ |txt| levelLayout.add(txt.align_(align), align: align) };
 
 			switch (levelLabelAlign,
-				\bottomLeft, {masterLayout.add(levelView, align: \left)},
-				\bottom, {masterLayout.add(levelView, align: \center)},
-				\bottomRight, {masterLayout.add(levelView, align: \right)},
+				\bottomLeft, { masterLayout.add(levelView, align: \left) },
+				\bottom, { masterLayout.add(levelView, align: \center) },
+				\bottomRight, { masterLayout.add(levelView, align: \right) },
 
-				\topLeft, {masterLayout.insert(levelView, align: \left)},
-				\top, {masterLayout.insert(levelView, align: \center)},
-				\topRight, {masterLayout.insert(levelView, align: \right)}
+				\topLeft, { masterLayout.insert(levelView, align: \left) },
+				\top, { masterLayout.insert(levelView, align: \center) },
+				\topRight, { masterLayout.insert(levelView, align: \right) }
 			);
 		};
 
 		labelTxt !? {
 			switch (labelAlign ?? \top,
-				\bottomLeft, {masterLayout.add(labelTxt, align: \left)},
-				\bottom, {masterLayout.add(labelTxt, align: \center)},
-				\bottomRight, {masterLayout.add(labelTxt, align: \right)},
+				\bottomLeft, { masterLayout.add(labelTxt, align: \left) },
+				\bottom, { masterLayout.add(labelTxt, align: \center) },
+				\bottomRight, { masterLayout.add(labelTxt, align: \right) },
 
-				\topLeft, {masterLayout.insert(labelTxt, align: \left)},
-				\top, {masterLayout.insert(labelTxt, align: \center)},
-				\topRight, {masterLayout.insert(labelTxt, align: \right)}
+				\topLeft, { masterLayout.insert(labelTxt, align: \left) },
+				\top, { masterLayout.insert(labelTxt, align: \center) },
+				\topRight, { masterLayout.insert(labelTxt, align: \right) }
 			);
 		};
 	}
@@ -161,11 +161,11 @@ LevelMeter : View {
 		var idxAbove = this.getThreshAbove(val);
 		^case
 		// exceeds top thresh
-		{idxAbove.isNil} {thresholdColors.last}
+		{ idxAbove.isNil } { thresholdColors.last }
 		// below lowest thresh
-		{idxAbove == 0} {defaultColor}
+		{ idxAbove == 0 } { defaultColor }
 		// value is between indeces
-		{thresholdColors[idxAbove-1]};
+		{ thresholdColors[idxAbove-1] };
 	}
 
 	// meter value is made of multiple rects:
@@ -178,11 +178,11 @@ LevelMeter : View {
 		threshIdx =
 		case
 		// exceeds top thresh
-		{idxAbove.isNil} {thresholds.size-1}
+		{ idxAbove.isNil } { thresholds.size-1 }
 		// below lowest thresh
-		{idxAbove == 0} {-1}
+		{ idxAbove == 0 } { -1 }
 		// value is between indeces
-		{ idxAbove-1 };
+		{ idxAbove-1  };
 
 		// draw level
 		if (threshIdx>=0) {
@@ -250,7 +250,7 @@ LevelMeter : View {
 					};
 				};
 				if (showPeak) { // draw peak
-					Pen.fillColor_(peakColor ?? {this.getColorByVal(peakValueNorm)});
+					Pen.fillColor_(peakColor ?? { this.getColorByVal(peakValueNorm) });
 					Pen.fillRect(
 						Size(bnds.width, peakLineSize).asRect.top_(bnds.height*(1-peakValueNorm));
 					);
@@ -263,7 +263,7 @@ LevelMeter : View {
 					);
 				};
 				if (showPeak) { // draw peak
-					peakColor !? {Pen.fillColor_(peakColor)};
+					peakColor !? { Pen.fillColor_(peakColor) };
 					Pen.fillRect(
 						Size(bnds.width, peakLineSize).asRect.top_(bnds.height*(1-peakValueNorm));
 					);
@@ -278,7 +278,7 @@ LevelMeter : View {
 		valTxt.string_(val.round(roundTo).asString);
 		val = spec.unmap(val);
 		valueNorm = val;
-		refresh.if{this.refresh};
+		refresh.if{ this.refresh };
 	}
 
 	peak_ { |val, refresh=true|
@@ -286,13 +286,13 @@ LevelMeter : View {
 		pkTxt.string_(val.round(roundTo).asString);
 		val = spec.unmap(val);
 		peakValueNorm = val;
-		refresh.if{this.refresh};
+		refresh.if{ this.refresh };
 	}
 
 	valuePeak_ { |val, pkval, refresh=true|
 		this.value_(val, false);
 		this.peak_(pkval, false);
-		refresh.if{this.refresh};
+		refresh.if{ this.refresh };
 	}
 
 	// conveniencemethods for the above three,
@@ -314,8 +314,8 @@ LevelMeter : View {
 
 	decimals_{ |num|
 		roundTo = if (num > 0)
-		{("0."++"".padRight(num-1,"0")++"1").asFloat}
-		{1}
+		{ ("0."++"".padRight(num-1,"0")++"1").asFloat }
+		{ 1 }
 		// TODO: update levelFont's protoString and apply it
 	}
 
@@ -332,7 +332,7 @@ LevelMeter : View {
 		maxTxt.string = maxString;
 
 		// update thresholds, NOTE: can't collect into a List!
-		thresholds.do{|thresh, i|
+		thresholds.do{ |thresh, i|
 			thresholdsNorm[i] = spec.unmap(thresh)
 		};
 		// update the size of the range text views
@@ -370,7 +370,7 @@ LevelMeter : View {
 
 	rangeFont_ { |font, protoString|
 		var txtSize;
-		protoString !? {protoRangeVal = protoString};
+		protoString !? { protoRangeVal = protoString };
 		font !? {
 			rangeFont = font;
 			[minTxt, maxTxt].do(_.font_(font));
@@ -383,7 +383,7 @@ LevelMeter : View {
 
 	levelFont_ { |font, protoString|
 		var txtSize;
-		protoString !? {protoLevelVal = protoString};
+		protoString !? { protoLevelVal = protoString };
 		font !? {
 			levelFont = font;
 			[valTxt, pkTxt].do(_.font_(font));
@@ -421,8 +421,8 @@ LevelMeter : View {
 
 		idx = case
 		// exceeds top thresh
-		{greaterIdx.isNil} {thresholds.size}
-		{greaterIdx};
+		{ greaterIdx.isNil } { thresholds.size }
+		{ greaterIdx };
 
 		thresholds.insert(idx, thresh);
 		thresholdColors.insert(idx, color ?? defaultColor);
@@ -458,27 +458,27 @@ LevelMeter : View {
 /*
 (
 w = Window().front;
-l = 12.collect{|i| LevelMeter(label: i)};
+l = 12.collect{ |i| LevelMeter(label: i) };
 l.do(_.spec_(ControlSpec(-100, 0)));
 w.view.layout_(HLayout(*l));
 )
 
 (
 w = Window().front;
-l = 12.collect{|i| LevelMeter(label: i, rangeLabelAlign: nil)};
+l = 12.collect{ |i| LevelMeter(label: i, rangeLabelAlign: nil) };
 l.do(_.spec_(ControlSpec(-100, 0)));
 w.view.layout_(HLayout(*l));
 )
 
 (
 w = Window().front;
-l = 12.collect{|i| LevelMeter(label: i, rangeLabelAlign: nil, labelAlign: \bottom)};
+l = 12.collect{ |i| LevelMeter(label: i, rangeLabelAlign: nil, labelAlign: \bottom) };
 l.do(_.spec_(ControlSpec(-100, 0)));
 w.view.layout_(HLayout(*l));
 )
 (
 w = Window().front;
-l = 12.collect{|i| LevelMeter(label: i, rangeLabelAlign: nil, levelLabelAlign: \bottomRight, labelAlign: \bottom)};
+l = 12.collect{ |i| LevelMeter(label: i, rangeLabelAlign: nil, levelLabelAlign: \bottomRight, labelAlign: \bottom) };
 l.do(_.spec_(ControlSpec(-100, 0)));
 w.view.layout_(HLayout(*l));
 )
@@ -508,13 +508,13 @@ w.view.layout_(HLayout(*l))
 (
 l.do(_.spec_(ControlSpec(-100, 0)));
 t = Task({
-	inf.do{
+inf.do{
 
-		l.do{|mtr|
-			var val = rrand(-100, 0.0);
-			mtr.valuePeak_(val, val*rrand(0.3, 0.6))};
-		0.1.wait;
-	}
+l.do{ |mtr|
+var val = rrand(-100, 0.0);
+mtr.valuePeak_(val, val*rrand(0.3, 0.6)) };
+0.1.wait;
+}
 },AppClock)
 )
 t.start
@@ -527,18 +527,18 @@ l.do(_.setThreshold(1, -5, Color.red));
 l.do(_.removeThreshold(0));
 
 (
-l.do{|mtr|
-	var numsteps=25;
-	var dbstep, colstep;
-	dbstep = mtr.spec.range/numsteps;
-	colstep= numsteps.reciprocal;
-	numsteps.do{|i|
-		mtr.addThreshold(
-			mtr.spec.minval+(dbstep*(i)),
-			// Color.hsv(1-(colstep*i/2),1,1)
-			Color.hsv(0.5-(colstep*i/2),1,1)
-		)
-	}
+l.do{ |mtr|
+var numsteps=25;
+var dbstep, colstep;
+dbstep = mtr.spec.range/numsteps;
+colstep= numsteps.reciprocal;
+numsteps.do{ |i|
+mtr.addThreshold(
+mtr.spec.minval+(dbstep*(i)),
+// Color.hsv(1-(colstep*i/2),1,1)
+Color.hsv(0.5-(colstep*i/2),1,1)
+)
+}
 }
 )
 
@@ -549,7 +549,7 @@ l.do(_.stepped_(true))
 // clear all thresholds
 l.do(_.do(_.clearThresholds))
 
-l.do{|mtr| mtr.meterView.background_(Color.gray.alpha_(0.2))}
+l.do{ |mtr| mtr.meterView.background_(Color.gray.alpha_(0.2)) }
 
 l.do(_.levelFontSize_(18))
 l.do(_.rangeFontSize_(8))
@@ -558,9 +558,9 @@ l.do(_.maxWidth_(25))
 l.do(_.decimals_(0))
 l.do(_.levelFont_(protoString: "-00"))
 l.do(_.rangeFont_(protoString: "-00"))
-l.do({|mtr| mtr.minWidth_(65)})
-l.do({|mtr| mtr.minWidth_(85)})
-l.do({|mtr| mtr.maxWidth_(15)})
+l.do({ |mtr| mtr.minWidth_(65) })
+l.do({ |mtr| mtr.minWidth_(85) })
+l.do({ |mtr| mtr.maxWidth_(15) })
 w.view.layout.add(nil)
 
 
@@ -588,14 +588,14 @@ w.view.layout_(HLayout(*l.do(_.meterWidth_(40))));
 
 */
 //
-// f = {|arg1 = 12, arg2 = 34| [arg1, arg2].postln }
+// f = { |arg1 = 12, arg2 = 34| [arg1, arg2].postln }
 // f.()        // -> [ 12, 34 ]
 // f.(56, 78)  // -> [ 56, 78 ]  // expected
 // f.(56, nil) // -> [ 56, nil ] // expected
 //
 // // different arg default specification
 // // (useful for negative values)
-// f = {|arg1(12), arg2(34)| [arg1, arg2].postln }
+// f = { |arg1(12), arg2(34)| [arg1, arg2].postln }
 // f.()        // -> [ 12, 34 ]
 // f.(56, 78)  // -> [ 56, 78 ]  // expected
 // f.(56, nil) // -> [ 56, 34 ]  // arg2 isn't nil?

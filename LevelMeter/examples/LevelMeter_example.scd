@@ -33,7 +33,7 @@ a "protoString" which is used to determine the space that is allocated
 for the text.  For example, if you expect values between 0 and 100, you
 might set the .labelFont_(protoString: "000.0"), which allocates enough
 space for a 3-digit number with one decimal point resolution.  Relatedly,
-the .decimals_() method will do the ensure the proper rounding of values.
+the .decimals_() method will ensure the proper rounding of values.
 
 Because the meter itself (a UserView) doesn't have an inherent size,
 it tends to shrink if the labels (particularly range labels) shrink.
@@ -49,7 +49,7 @@ The range labels can be either \left or \right of the meter.
 An argument value of nil will omit that meter.
 This allows a large number of configurations.
 
-If you only want to show only the value or only the peak,
+If you want to show only the value or the peak,
 set .showPeak_(bool) or .showValue_(bool).
 
 Then just use the .value_ or .peak_ instead of .valuePeak_ setters
@@ -148,20 +148,28 @@ var steppedMeters, pkMeters, colMeters;
 
 // sound source = 6 channels
 ~sig !? {~sig.free};
-~sig = { |updateFreq=10|
+~sig = { |updateFreq=10, peakHoldDelay = 0|
 	var sig, trig, rms, peak;
 
 	sig = WhiteNoise.ar * LFTri.kr(~numChans.collect{|i|0.2+(i*0.2)}).range(0,1);
-
 	trig = Impulse.kr(updateFreq);
-	rms = RunningSum.rms(sig, 0.05*SampleRate.ir);
-	peak = Peak.ar(sig, Delay1.kr(trig));
+	rms = MovingAverage.rms(sig, 0.05*SampleRate.ir, 0.05*SampleRate.ir);
+
+	peak = Peak.ar(
+		sig,
+		Delay1.kr(
+			(0 + Stepper.kr(trig, max: peakHoldDelay)) + trig
+		)
+	);
 
 	SendReply.kr(trig,
 		'/ampPkVals',
 		rms++peak
 	);
-	Out.ar(2, sig);
+	Out.ar(
+		s.options.numOutputBusChannels + s.options.numInputBusChannels,
+		sig
+	);
 }.play;
 
 // listener to get amp/peak vals and update meters
@@ -174,7 +182,7 @@ meterListener = OSCdef(\meterRelay, { |msg|
 			meter !? {
 			// set the amp value, meter converts to dB
 			// with .ampdb variant setter
-			defer {meter.ampdbValuePeak_(*ampPkVals[i])}
+			defer { meter.ampdbValuePeak_(*ampPkVals[i]) }
 			}
 		}
 	};
@@ -208,9 +216,11 @@ meterListener = OSCdef(\meterRelay, { |msg|
 
 meters_1.do({|mtr|
 	mtr !? {
+
 		// setting the meter's background can help illustrate
 		// it's range. Access the .meterView (UserView) directly
 		mtr.meterView.background_(Color.gray.alpha_(0.2));
+
 		// change the value text color by accessing the
 		// valTxt (StaticText) directly
 		mtr.valTxt.stringColor_(Color.blue.alpha_(0.4));
@@ -220,7 +230,7 @@ meters_1.do({|mtr|
 
 // --- 3 --------------------------------------------
 // label bottom, level/peak topRight, range left
-// colorized by threshold,
+// colorized (stepped) by threshold,
 
 ~metersArr.add(
 	colMeters = ~numChans.collect({ |i|
@@ -261,7 +271,7 @@ colMeters.do({|mtr|
 		.showPeak_(true)
 		.levelFontSize_(10)
 		.rangeFontSize_(12).rangeFont_(protoString: "-00") // -90 is lowest value, so only need this much space
-		.levelFont_(protoString: "-00") // -90 is lowest value, so only need this much space
+		.levelFont_(protoString: "-00.0") // -90 is lowest value, so only need this much space
 		.meterWidth_(20) // make sure all meters have the same width
 		.decimals_(0) // round values to integers
 		.spec_(ControlSpec(-90, 0)) // set the spec before setting the thresholds below
@@ -331,5 +341,11 @@ w = Window(bounds: Rect(0,0,480,Window.screenBounds.height)).front.view.layout_(
 
 // change the spec range of all the sliders
 ~metersArr.do(_.do({|mtr| mtr !? {mtr.spec_(ControlSpec(-60, 0))}}))
+
+~sig.set(\updateFreq, 15)    // drive meter faster or slower
+
+~sig.set(\peakHoldDelay, 13) // wait to update peak every 'n' rms updates
+~sig.set(\peakHoldDelay, 1)  // only update peak every other rms update
+~sig.set(\peakHoldDelay, 0)  // no update delay, update peak with every rms update
 
 s.quit;
