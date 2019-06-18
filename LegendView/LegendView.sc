@@ -11,7 +11,7 @@ This is a quick port of the PolarLegendLayer, part of PolarPlot.
 
 LegendView {
 	// capyArgs
-	var parent, data, dataColors, align, <strokeTypes;
+	var parent, data, dataColors, align, strokeTypes, <>moveable;
 
 	var <p; // properties
 	var <uv; // UserView
@@ -19,20 +19,24 @@ LegendView {
 	var nElem, txtRects, labels, font, legBnds;
 	var updated = false;
 
-	*new { |parent, data, dataColors, align, strokeTypes|
-		^super.newCopyArgs(parent, data, dataColors, align, strokeTypes).init;
+	*new { |parent, data, dataColors, align, strokeTypes, moveable = true|
+		^super.newCopyArgs(parent, data, dataColors, align, strokeTypes, moveable).init;
 	}
 
 	init {
-		var prevMousePnt, dragging = false;
-		// var uvtemp; // debug
-
 		p = this.class.properties;
 		this.updateParentDims;
 
 		strokeTypes = strokeTypes ?? { (\lines).dup(data.size) };
 		p.dataColors = dataColors ?? { Color.hsvSeries(data.size) };
 		p.align = align;
+		nElem = data.size;
+		this.initUserView; // init drawing and interaction funcs
+	}
+
+	initUserView {
+		var prevMousePnt, dragging = false;
+		// var uvtemp; // debug
 
 		// the UserView overlays on the entire parent view, legend drawn in
 		// a subspace of the Userview
@@ -47,26 +51,27 @@ LegendView {
 		uv.mouseDownAction_{ |v, x, y|
 			var downPnt = Point(x, y);
 			var inside, testBnds;
-
-			if (p.align.isKindOf(Point).not) {
-				// if aligned by keyword, drawing origin has
-				// been translated to center, so bounds are offset
-				testBnds = legBnds.copy.origin_(legBnds.origin + parCen);
-				inside = testBnds.contains(downPnt);
-				if (inside) {
-					p.align = legBnds.center + parCen / parWHPnt;
+			if (moveable) {
+				if (p.align.isKindOf(Point).not) {
+					// if aligned by keyword, drawing origin has
+					// been translated to center, so bounds are offset
+					testBnds = legBnds.copy.origin_(legBnds.origin + parCen);
+					inside = testBnds.contains(downPnt);
+					if (inside) {
+						p.align = legBnds.center + parCen / parWHPnt;
+					};
+				} {
+					testBnds = legBnds.copy.center_(p.align * parWHPnt);
+					inside = testBnds.contains(downPnt);
 				};
-			} {
-				testBnds = legBnds.copy.center_(p.align * parWHPnt);
-				inside = testBnds.contains(downPnt);
-			};
 
-			// debug: highlight legend click area on mouse down
-			// uvtemp = UserView(parent.view, testBnds).background_(Color.red.alpha_(0.3)).front;
+				// debug: highlight legend click area on mouse down
+				// uvtemp = UserView(parent.view, testBnds).background_(Color.red.alpha_(0.3)).front;
 
-			if (inside) {
-				prevMousePnt = downPnt;
-				dragging = true
+				if (inside) {
+					prevMousePnt = downPnt;
+					dragging = true
+				};
 			}
 		};
 
@@ -77,15 +82,15 @@ LegendView {
 
 		uv.mouseMoveAction_{ |v, x, y|
 			var mousie, dxdy;
-			if (dragging) {
-				mousie = Point(x, y);
-				dxdy = mousie - prevMousePnt / (parWdth@parHght);
-				this.set(\align, p.align + dxdy);
-				prevMousePnt = mousie;
+			if (moveable) {
+				if (dragging) {
+					mousie = Point(x, y);
+					dxdy = mousie - prevMousePnt / (parWdth@parHght);
+					this.set(\align, p.align + dxdy);
+					prevMousePnt = mousie;
+				}
 			}
 		};
-
-		nElem = data.size;
 	}
 
 	updateParentDims {
@@ -341,25 +346,45 @@ LegendView {
 }
 
 /*
-// Usage //
+/* Quick Demo */
 
+/* generate some test data */
 (
+// colors
 c = [Color.red, Color.cyan, Color.green, Color.blue];
+// data
 d = 4.collect({ |i| 100.collect({|j| sinPi(1+i.squared*j * 50.reciprocal) })});
+// plotter
 p = d.plot;
+// set the plotter with colors and plot modes
 p.plotColors_(c).plotModes_([\steps, \linear, \plines, \points]).superpose_(true);
-{ p.refresh }.defer(0.4);
+// defer refresh to make sure the window has been made
+{ p.refresh }.defer(0.3);
 )
 
+// add the \LegendView to teh Plotter's window/view
 l = LegendView(p.parent, d, c, \bottomRight)
 
+// adjust alignment
 l.set(\align, \topRight)
-l.set(\inset, 45)
-l.set(\fontSize, 0.05)
-l.set(\labels, ["one", "two", "three", "four"])
-l.set(\layout, \horizontal)
+l.set(\align, Point(0.85, 0.5))
+l.moveable = true;	// move legend with mouse (default)
+l.moveable = false;	// disable moveable legend
 
-// other settable properties:
-l.p // current properties
-LegendView.properties // property template
+l.set(\align, \bottomLeft)
+l.set(\inset, 45) // when using keywords
+
+l.set(\fontSize, 0.04)	// 0 > 0.999 for scaling relative to window's smallest dimension
+l.set(\fontSize, 10.4)	// 1.0+ for font in pixels
+l.set(\labels, ["one", "two", "three", "four"])
+
+l.set(\layout, \horizontal)
+l.set(\align, \bottom)
+l.set(\inset, 27)
+l.set(\fillColor, Color.clear) // transparent background
+
+/* more settable properties */
+l.p						// current properties
+LegendView.properties	// property template
+
 */
