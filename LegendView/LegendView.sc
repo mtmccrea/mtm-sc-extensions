@@ -11,7 +11,7 @@ This is a quick port of the PolarLegendLayer, part of PolarPlot.
 
 LegendView {
 	// capyArgs
-	var parent, data, dataColors, align, strokeTypes, <>moveable;
+	var parent, numChannels, colors, align, strokeTypes, <>moveable;
 
 	var <p; // properties
 	var <uv; // UserView
@@ -19,18 +19,18 @@ LegendView {
 	var nElem, txtRects, labels, font, legBnds;
 	var updated = false;
 
-	*new { |parent, data, dataColors, align, strokeTypes, moveable = true|
-		^super.newCopyArgs(parent, data, dataColors, align, strokeTypes, moveable).init;
+	*new { |parent, numChannels, colors, align, strokeTypes, moveable = true|
+		^super.newCopyArgs(parent, numChannels, colors, align, strokeTypes, moveable).init;
 	}
 
 	init {
 		p = this.class.properties;
 		this.updateParentDims;
 
-		strokeTypes = strokeTypes ?? { (\lines).dup(data.size) };
-		p.dataColors = dataColors ?? { Color.hsvSeries(data.size) };
+		strokeTypes = strokeTypes ?? { (\lines).dup(numChannels) };
+		p.colors = colors ?? { Color.hsvSeries(numChannels) };
 		p.align = align;
-		nElem = data.size;
+		nElem = numChannels;
 		this.initUserView; // init drawing and interaction funcs
 	}
 
@@ -131,7 +131,7 @@ LegendView {
 			strokeWidth: 2,
 			pointRad:    2,
 			fillPoints:  false,
-			dataColors:  [],
+			colors:  [],
 		)
 	}
 
@@ -158,7 +158,7 @@ LegendView {
 			cursor = 0@0; // reset cursor
 
 			Pen.width = p.strokeWidth;
-			lineCols = p.dataColors.asArray;
+			lineCols = p.colors.asArray;
 			pntRad = p.pointRad;
 			cRect = [0,0,pntRad*2,pntRad*2].asRect;
 
@@ -178,7 +178,7 @@ LegendView {
 				Pen.push;
 
 				h_2 = txtRects[0].height/2;
-				sColor = p.dataColors[i];
+				sColor = p.colors[i];
 
 				if (strokeTypes.wrapAt(i).isKindOf(FloatArray)) {
 					Pen.lineDash_(strokeTypes.wrapAt(i))
