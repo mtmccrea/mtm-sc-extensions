@@ -1,6 +1,6 @@
 RecordControl {
 	// copyArgs
-	var <numChannels, <>headerFormat, <>sampleFormat, <>overwrite, <>appendKr, server;
+	var <numChannels, <>headerFormat, <>sampleFormat, <>overwrite, <>appendKr, <>appendFs, server;
 
 	var <busnum, <fileName, <directory, <>verbose=true;
 	var <buffer, <recPath, <recording=false;
@@ -8,9 +8,9 @@ RecordControl {
 	var wrSynth, baseFileName, <gui;
 	var <plotter, <plotting = false, prevPlotWinBounds, prevPlotBounds, overlayPlot=false;
 
-	*new { |busOrIndex, numChannels=1, fileName, directory, headerFormat = "WAV", sampleFormat = "float", overwrite=false, appendKr=true, server, makeGui=false|
+	*new { |busOrIndex, numChannels=1, fileName, directory, headerFormat = "WAV", sampleFormat = "float", overwrite=false, appendKr=false, appendFs=true, server, makeGui=false|
 		^super.newCopyArgs(
-			numChannels, headerFormat, sampleFormat, overwrite, appendKr, server
+			numChannels, headerFormat, sampleFormat, overwrite, appendKr, appendFs, server
 		).init(busOrIndex, fileName, directory, makeGui);
 	}
 
@@ -287,7 +287,13 @@ RecordControl {
 	}
 
 	prPrepareBuffer { |cond|
-		recPath = directory +/+ fileName ++ appendKr.if({"_kr."},{"."}) ++ headerFormat;
+		recPath = directory +/+ fileName
+		++ case
+		{ appendFs } { "_fs%.".format(server.sampleRate / server.options.blockSize) }
+		{ appendKr } { "_kr." }
+		{ appendFs } { "_fs." }
+		{"."}
+		++ headerFormat;
 
 		if (File.exists(recPath) and: overwrite.not) {
 			var er;
