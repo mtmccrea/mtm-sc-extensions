@@ -9,11 +9,11 @@
 		var hueStep;
 		hueOffset = hueOffset ?? { 0 };
 		hueRange  = hueRange ?? { 1 - numColors.reciprocal };
-		hueStep   = hueRange / (numColors - 1);
+		hueStep   = hueRange / max(1, numColors - 1);
 
 		^numColors.collect{ |i|
 			Color.hsv(
-				(hueOffset + (hueStep * i)).wrap(0,1).postln,
+				(hueOffset + (hueStep * i)).wrap(0,1),
 				sat,
 				value,
 				alpha
