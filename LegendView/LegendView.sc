@@ -286,7 +286,9 @@ LegendView {
 			p.fontName,
 			if (p.fontSize < 1) { p.fontSize * minDim } { p.fontSize }
 		);
-		txtRects = labels.collect(_.bounds(font));
+		txtRects = labels.collect{ |r|
+			(r.bounds(font).asArray * [1,1,1.05,1.05]).asRect; // pad w/h slightly
+		};
 		spacing = p.spacing;
 		margin = p.margin;
 		align = p.align;
