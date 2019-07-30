@@ -32,7 +32,7 @@ fork( {
 
 	// j=0;
 	// generate the sequence
-	dexes = (0..180);
+	dexes = (0..8);
 	dexes = dexes.clump(4).scramble.flat;
 
 	dexes.do{|j, k|
