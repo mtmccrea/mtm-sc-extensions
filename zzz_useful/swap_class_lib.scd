@@ -7,7 +7,7 @@ thisProcess.recompile
 )
 
 
-( // restore defaul class lib
+( // restore default class lib
 LanguageConfig.removeExcludePath(Platform.resourceDir +/+ "SCClassLibrary");
 LanguageConfig.removeIncludePath("/Users/dyne/src/supercollider/SCClassLibrary");
 LanguageConfig.store;
@@ -15,5 +15,5 @@ thisProcess.recompile;
 )
 
 Platform.classLibraryDir // current compiled
-LanguageConfig.excludePaths.postlns;
-LanguageConfig.includePaths.postlns;
+LanguageConfig.excludePaths.do(_.postln);
+LanguageConfig.includePaths.do(_.postln);
