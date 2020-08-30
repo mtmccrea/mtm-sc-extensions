@@ -400,10 +400,11 @@ LevelMeter : View {
 
 	setThreshold { |index, thresh, color|
 		if (index < thresholds.size) {
-			this.removeThresh(index);
-			this.addThresh(thresh, color);
+			color = color ?? { this.thresholdColors[index] };
+			this.removeThreshold(index);
+			this.addThreshold(thresh, color);
 		} {
-			this.addThresh(thresh, color);
+			this.addThreshold(thresh, color);
 		}
 	}
 
