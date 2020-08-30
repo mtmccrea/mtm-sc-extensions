@@ -153,7 +153,7 @@ var steppedMeters, pkMeters, colMeters;
 
 	sig = WhiteNoise.ar * LFTri.kr(~numChans.collect{|i|0.2+(i*0.2)}).range(0,1);
 	trig = Impulse.kr(updateFreq);
-	rms = MovingAverage.rms(sig, 0.05*SampleRate.ir, 0.05*SampleRate.ir);
+	rms = RunningSum.rms(sig, 0.05*SampleRate.ir, 0.05*SampleRate.ir);
 
 	peak = Peak.ar(
 		sig,
