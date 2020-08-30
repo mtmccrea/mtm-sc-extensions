@@ -46,7 +46,7 @@ GatedCompander {
 
 						lim = Limiter.ar(LeakDC.ar(comp), 1);
 
-						Out.ar( outbus, lim * amp);
+						ReplaceOut.ar( outbus, lim * amp);
 					}),
 
 					SynthDef(\gCompanderMonitor, { arg inbus, updateRate=10;
