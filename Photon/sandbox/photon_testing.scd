@@ -10,7 +10,8 @@ g = CtkGroup.new;
 })
 )
 
-({
+(
+fork {
 	p =
 	3.collect{
 		Photon(
@@ -25,7 +26,7 @@ g = CtkGroup.new;
 	};
 	1.wait;
 	p.do{|me| me.flux_(2.rand+3).gustSpread_(10).chaos_(0.5)};
-}.fork
+}
 )
 p.do(_.chaos_(1))
 p.do(_.chaos_(0))
@@ -165,6 +166,7 @@ x.setn(\rings, 40.dup(4));
 
 y.setn(\rings, 4.dup(4));
 x.setn(\rings, 4.dup(4));
+
 (
 y.setn(\rings, 4.collect{rrand(0.03,1.0)});
 x.setn(\rings, 4.collect{rrand(0.03,1.0).postln});
@@ -185,6 +187,7 @@ x.setn(\rings, 4.collect{rrand(23,36.2).postln});
 // change amplitudes of partials ... some changes sound like attacks
 y.setn(\amps, Array.exprand(4, 0.01, 1));
 [a,x].do{|me|me.setn(\amps, Array.exprand(4, 0.01, 1)) }
+
 (
 var amplo, amphi, waitMul;
 r !? {r.stop};
@@ -211,9 +214,9 @@ q = Routine.run({
 r.stop; q.stop;
 
 (
-var kind, root, scale;
+var kind, root, scale, ring;
 kind =
-'major'
+// 'major'
 // 'minor'
 // 'harm-minor'
 // 'melo-minor'//only up, use 'minor' for down
@@ -224,7 +227,7 @@ kind =
 // 'quartertones'
 // //// tuning tables:
 // 'just'
-// 'fifth'
+'fifth'
 // //// tuning tables from Apple Logic Pro:
 // 'pythagorean'
 // 'werckmeister'
@@ -242,8 +245,10 @@ scale = Array.makeScaleMidi( root.notemidi, kind ).midicps;
 y.setn(\freqs, 4.collect{scale.choose});
 x.setn(\freqs, 4.collect{scale.choose});
 
-// y.setn(\rings, 4.dup(4));
-// x.setn(\rings, 4.dup(4));
+ring = 2;
+x.setn(\rings, 4.collect{ring * rrand(0.7, 1.3)});
+y.setn(\rings, 4.collect{ring * rrand(0.7, 1.3)});
+// x.setn(\rings, ring.dup(4));
 )
 
 s.recChannels_(2)
