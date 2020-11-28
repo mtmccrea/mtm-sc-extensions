@@ -30,19 +30,26 @@
 
 MultiTapN  {
 
-	*ar { arg timesArray, levelsArray, in = 0.0, mul = 1.0, add = 0.0,bufnum, t_reset=0;
+	*ar { arg in = 0.0, timesArray, levelsArray, bufnum, interp = 2;
 		var sampleRate, wrBuf, wrapAt;
-		timesArray = timesArray.dereference;
+
+		timesArray  = timesArray.dereference;
 		levelsArray = levelsArray.dereference;
-		sampleRate = BufSampleRate.kr(bufnum);
-		wrapAt = BufFrames.kr(bufnum); // convert to sample _index_
+		sampleRate  = BufSampleRate.kr(bufnum);
+		wrapAt      = BufFrames.kr(bufnum); // convert to sample _index_
 
-		wrBuf = BufWr.ar(in, bufnum,
-			Phasor.ar(0, -1 * BufRateScale.kr(bufnum), 0, wrapAt)
+		wrBuf = BufWr.ar(
+			inputArray: in,
+			bufnum: bufnum,
+			phase: Phasor.ar(0, -1 * BufRateScale.kr(bufnum), 0, wrapAt)
 		);
 
-		^BufRd.ar(1, bufnum,
-			(wrBuf + (timesArray*sampleRate)) % wrapAt
-		);
+		^BufRd.ar(
+			numChannels: 1,
+			bufnum: bufnum,
+			phase: (wrBuf + (timesArray*sampleRate)) % wrapAt,
+			loop: 1,
+			interpolation: interp
+		) * levelsArray;
 	}
 }
