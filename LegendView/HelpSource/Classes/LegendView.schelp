@@ -1,0 +1,142 @@
+TITLE:: LegendView
+summary:: A configurable legend to your plot.
+categories:: Plotting
+related:: Classes/Plotter, Classes/Plot
+
+DESCRIPTION::
+link::Classes/LegendView:: a configurable legend that can be inserted into a plot window.
+The view offers some high-level parameters for adding labels, configuring alignment, line and font sizes, etc.
+The view scales automatically with resing of the parent window.
+Once drawn, the legend is (optionally) draggable by mouse.
+
+This is a quick port of the PolarLegendLayer, part of PolarPlot, so is sparsely documented here.
+But the functionality is demonstrated in the link::#examples#Examples::.
+
+EXAMPLES::
+
+code::
+/* generate some test data */
+(
+// colors
+c = [Color.red, Color.cyan, Color.green, Color.blue];
+// data
+d = 4.collect({ |i| 100.collect({|j| sinPi(1+i.squared*j * 50.reciprocal) })});
+// plotter
+p = d.plot;
+// set the plotter with colors and plot modes
+p.plotColor_(c).plotMode_([\steps, \linear, \plines, \points]).superpose_(true);
+// defer refresh to make sure the window has been made
+{ p.refresh }.defer(0.3);
+)
+
+// add the \LegendView to the Plotter's window/view
+l = LegendView(p.parent, d.size, c, \bottomRight)
+
+// adjust alignment
+l.set(\align, \topRight)
+l.set(\align, Point(0.85, 0.5))
+l.moveable = true;	// move legend with mouse (default)
+l.moveable = false;	// disable moveable legend
+
+l.set(\align, \bottomLeft)
+l.set(\inset, 45) // when using alignment keywords
+
+l.set(\fontSize, 0.04)	// [0, 0.999) for scaling relative to window's smallest dimension
+l.set(\fontSize, 10.4)	// [1.0, inf) for font in pixels
+l.set(\labels, ["one", "two", "three", "four"])
+
+l.set(\layout, \horizontal)
+l.set(\align, \bottom)
+l.set(\inset, 27)
+l.set(\fillColor, Color.clear) // transparent background
+
+/* more settable properties */
+l.p						// current properties
+LegendView.properties	// property template
+::
+
+/*
+CLASSMETHODS::
+
+METHOD:: properties
+(describe method here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: new
+(describe method here)
+
+ARGUMENT:: parent
+(describe argument here)
+
+ARGUMENT:: numChannels
+(describe argument here)
+
+ARGUMENT:: colors
+(describe argument here)
+
+ARGUMENT:: align
+(describe argument here)
+
+ARGUMENT:: strokeTypes
+(describe argument here)
+
+ARGUMENT:: moveable
+(describe argument here)
+
+returns:: (describe returnvalue here)
+
+
+INSTANCEMETHODS::
+
+METHOD:: uv
+(describe method here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: set
+(describe method here)
+
+ARGUMENT:: property
+(describe argument here)
+
+ARGUMENT:: value
+(describe argument here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: initUserView
+(describe method here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: moveable
+(describe method here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: init
+(describe method here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: updateParentDims
+(describe method here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: fill
+(describe method here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: p
+(describe method here)
+
+returns:: (describe returnvalue here)
+
+METHOD:: stroke
+(describe method here)
+
+returns:: (describe returnvalue here)
+*/

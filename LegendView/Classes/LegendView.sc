@@ -26,11 +26,14 @@ LegendView {
 	init {
 		p = this.class.properties;
 		this.updateParentDims;
-
+1.postln;
 		strokeTypes = strokeTypes ?? { (\lines).dup(numChannels) };
+		2.postln;
 		p.colors = colors ?? { Color.hsvSeries(numChannels) };
+		3.postln;
 		p.align = align;
 		nElem = numChannels;
+		4.postln;
 		this.initUserView; // init drawing and interaction funcs
 	}
 
