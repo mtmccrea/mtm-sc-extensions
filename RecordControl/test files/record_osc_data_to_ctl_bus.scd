@@ -101,6 +101,23 @@ File.mkdir(~recorder.directory +/+ ~folderName)
 
 
 
+// Test ControlPlotter with a signal
+~dataBus = Bus.control(s,numChannels: 4);
+c = CtkControl.lfo(SinOsc, 2, bus: ~dataBus.index).play
+c.freq = 0.5
+c.freq = 50
+c.free
+d = CtkControl.lfo(LFSaw, 2, bus: ~dataBus.index+1).play
+d.freq = 0.5
+d.free
+p = ControlPlotter(~dataBus.index, 4, plotLength: 75, refresh_rate: 60, overlay: false)
+p.start
+p.plotMode = \lines
+p.bounds = \auto
+p.bounds_(-2,2)
+p.free
+p.mon.plotter.specs
+~dataBus.plot(0.2)
 
 
 
