@@ -9,11 +9,11 @@ MBCompressor {
 	<defXOverFreqs, <ui;
 
 	/* UNCOMMENT TO USE THIS CLASS */
-	// *initClass {
-	// 	StartUp.add({
-	// 		this.loadSynthDefs;
-	// 	});
-	// }
+	*initClass {
+		StartUp.add({
+			this.loadSynthDefs;
+		});
+	}
 
 	*new { |inbusnum, outbus, floor = -40, ceil = -10, targ = 0, gainrolloff = 0, server, compAddAction = \tail, compTarget = 1|
 		^super.newCopyArgs( inbusnum, outbus, floor, ceil, targ, gainrolloff, server, compAddAction, compTarget ).init;
