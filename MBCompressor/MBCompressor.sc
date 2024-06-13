@@ -214,7 +214,7 @@ MBCompressor {
 			idbrolloff = 6;	// rolloff toward tranfer function elbow (+db)
 
 			gain = IEnvGen.ar(
-				InterplEnv(
+				Env(
 					[-120, itarget-ifloor-idbrolloff, itarget],
 					[ifloor.abs, (itarget-ifloor).abs],
 					[4, 2]
