@@ -1,12 +1,12 @@
 ControlMixer {
-	// copyArga
+	// copyArgs
 	var <broadcastTag, <broadcastAddr, <broadcastRate, <server, loadCond, colorShift, <broadcasting;
 
 	var <busnum, <oscTag, <ctlFades, <ctlViews, <>oscEnabled = true, outVal;
 	var <ratePeriodSpec, <sclSpec, <offsSpec;
 	var <mixView, msgTxt, <broadcastChk, <plotChk, updateBx, outValTxt;
 	var <nBoxWidth = 42, <nBoxHeight = 15, <validLFOs, <plotter, <ctlLayout, plotterAdded = false;
-	var broadcastBus, broadcastWaittime, broadcastTag, pollTask;//, <broadcasting=false;
+	var broadcastBus, broadcastWaittime, pollTask;//, <broadcasting=false;
 	var baseColor, idColor, <mixColor, colorStep;
 
 	*new { | broadcastTag="/myMessage", broadcastNetAddr, broadcastRate=30, server, loadCond, colorShift=0.03, broadcasting=true |
